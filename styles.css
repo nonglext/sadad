@@ -326,20 +326,26 @@ body {
     color: #dcddde;
 }
 
-/* Messages Styles */
+/* ====================================================================
+ * DISCORD-STYLE CHAT — Компактные сообщения, вся ширина,
+ * аватар слева, имя жирным над текстом, дата мелкая
+ * ==================================================================== */
+
 .messages {
     flex: 1;
     overflow-y: auto;
-    padding: 16px;
+    padding: 8px 0;
     display: flex;
     flex-direction: column;
 }
 
 .message-group {
-    margin-bottom: 16px;
     display: flex;
-    padding: 4px 16px;
-    transition: background-color 0.1s;
+    padding: 8px 72px 8px 72px;
+    transition: background-color 0.1s ease;
+    margin-bottom: 0;
+    gap: 16px;
+    border-bottom: 1px solid transparent;
 }
 
 .message-group:hover {
@@ -349,6 +355,7 @@ body {
 .message-avatar {
     width: 40px;
     height: 40px;
+    min-width: 40px;
     border-radius: 50%;
     background-color: #5865f2;
     display: flex;
@@ -356,37 +363,52 @@ body {
     justify-content: center;
     font-weight: 600;
     color: white;
-    margin-right: 16px;
     flex-shrink: 0;
+    cursor: pointer;
+    transition: opacity 0.15s;
+    margin: 0;
+}
+
+.message-avatar:hover {
+    opacity: 0.85;
 }
 
 .message-content {
     flex: 1;
+    min-width: 0;
 }
 
 .message-header {
     display: flex;
     align-items: baseline;
     margin-bottom: 4px;
+    gap: 6px;
 }
 
 .message-author {
     font-size: 16px;
     font-weight: 600;
     color: #ffffff;
-    margin-right: 8px;
+    cursor: pointer;
+    transition: text-decoration 0.15s;
+}
+
+.message-author:hover {
+    text-decoration: underline;
 }
 
 .message-timestamp {
-    font-size: 12px;
+    font-size: 11px;
     color: #72767d;
+    font-weight: 400;
 }
 
 .message-text {
     font-size: 16px;
-    line-height: 1.375;
+    line-height: 1.4;
     color: #dcddde;
     word-wrap: break-word;
+    white-space: pre-wrap;
 }
 
 /* Message Input Styles */
@@ -1999,16 +2021,14 @@ textarea:focus-visible {
 }
 
 /* ====================================================================
- * ENHANCED PROFILE MODAL (Badges, Banner, Deco, Widgets)
+ * ENHANCED PROFILE MODAL v3 — Большая карточка, крупный аватар,
+ * статус-кружок (как в Discord), бейджи под именем, NO виджетов
  * ==================================================================== */
 
 .profile-modal-overlay {
     position: fixed;
-    top: 0;
-    left: 0;
-    right: 0;
-    bottom: 0;
-    background: rgba(0, 0, 0, 0.7);
+    top: 0; left: 0; right: 0; bottom: 0;
+    background: rgba(0, 0, 0, 0.75);
     display: flex;
     align-items: center;
     justify-content: center;
@@ -2016,7 +2036,7 @@ textarea:focus-visible {
     opacity: 0;
     pointer-events: none;
     transition: opacity 0.2s ease;
-    backdrop-filter: blur(4px);
+    backdrop-filter: blur(6px);
 }
 
 .profile-modal-overlay.visible {
@@ -2024,23 +2044,24 @@ textarea:focus-visible {
     pointer-events: auto;
 }
 
+/* Карточка — 420px, Discord-тёмная */
 .profile-modal {
     background: #111214;
     border-radius: 12px;
-    width: 340px;
-    max-width: 90vw;
-    max-height: 90vh;
+    width: 420px;
+    max-width: 92vw;
+    max-height: 85vh;
     overflow-y: auto;
     position: relative;
-    box-shadow: 0 8px 40px rgba(0, 0, 0, 0.6);
+    box-shadow: 0 16px 48px rgba(0, 0, 0, 0.7);
     --profile-primary: #5865f2;
     --profile-accent: #3ba55d;
 }
 
-/* Banner */
+/* Banner — 160px высота */
 .profile-modal-banner {
     width: 100%;
-    height: 120px;
+    height: 160px;
     background: linear-gradient(135deg, var(--profile-primary), #1e1f23);
     background-size: cover;
     background-position: center;
@@ -2053,12 +2074,12 @@ textarea:focus-visible {
     position: absolute;
     top: 12px;
     right: 12px;
-    width: 32px;
-    height: 32px;
-    background: rgba(0, 0, 0, 0.5);
+    width: 36px;
+    height: 36px;
+    background: rgba(0, 0, 0, 0.6);
     border: none;
     color: #fff;
-    font-size: 20px;
+    font-size: 22px;
     border-radius: 50%;
     cursor: pointer;
     display: flex;
@@ -2069,148 +2090,144 @@ textarea:focus-visible {
 }
 
 .profile-modal-close:hover {
-    background: rgba(237, 66, 69, 0.8);
+    background: rgba(237, 66, 69, 0.9);
     transform: scale(1.1);
 }
 
-/* Avatar container with decoration */
+/* Avatar container — большой, центрированный, аватар 124px */
 .profile-modal-avatar-container {
     display: flex;
     justify-content: center;
-    margin-top: -50px;
+    margin-top: -62px;
     position: relative;
     z-index: 5;
 }
 
 .profile-modal-avatar-decoration {
     position: absolute;
-    width: 100px;
-    height: 100px;
+    width: 140px;
+    height: 140px;
     border-radius: 50%;
-    top: -6px;
+    top: -8px;
     left: 50%;
     transform: translateX(-50%);
     display: none;
     pointer-events: none;
 }
 
+/* Аватар — 124x124, крупный, с border */
 .profile-modal-avatar {
-    width: 88px;
-    height: 88px;
+    width: 124px;
+    height: 124px;
     border-radius: 50%;
     background: linear-gradient(135deg, var(--profile-primary), #5865f2);
     display: flex;
     align-items: center;
     justify-content: center;
-    font-size: 36px;
+    font-size: 52px;
     font-weight: 600;
     color: #fff;
     position: relative;
-    border: 4px solid #111214;
+    border: 6px solid #111214;
     cursor: pointer;
     transition: transform 0.2s;
+    aspect-ratio: 1/1;
 }
 
 .profile-modal-avatar:hover {
-    transform: scale(1.05);
+    transform: scale(1.06);
 }
 
-/* Status indicator on profile */
+/* Status indicator — как в Discord: маленький кружок внизу-справа */
 .profile-modal-status {
     position: absolute;
-    bottom: 4px;
-    right: 4px;
-    width: 22px;
-    height: 22px;
+    bottom: 8px;
+    right: 8px;
+    width: 28px;
+    height: 28px;
     border-radius: 50%;
     background: #3ba55d;
-    border: 3px solid #111214;
+    border: 5px solid #111214;
     display: flex;
     align-items: center;
     justify-content: center;
     font-size: 10px;
     color: #fff;
     text-indent: -9999px;
+    box-sizing: content-box;
 }
 
-.profile-modal-status.status-online {
-    background: #3ba55d;
-}
-
-.profile-modal-status.status-idle {
-    background: #faa61a;
-}
-
-.profile-modal-status.status-dnd {
-    background: #ed4245;
-}
-
-.profile-modal-status.status-offline {
-    background: #747f8d;
-}
-
-/* Badges row */
-.profile-modal-badges {
-    display: flex;
-    justify-content: center;
-    gap: 6px;
-    padding: 12px 16px 4px;
-    flex-wrap: wrap;
-}
-
-.profile-badge {
-    width: 28px;
-    height: 28px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    cursor: help;
-    transition: transform 0.2s;
-}
-
-.profile-badge:hover {
-    transform: scale(1.2);
-}
-
-.profile-badge svg {
-    width: 22px;
-    height: 22px;
-}
+.profile-modal-status.status-online { background: #3ba55d; }
+.profile-modal-status.status-idle { background: #faa61a; }
+.profile-modal-status.status-dnd { background: #ed4245; }
+.profile-modal-status.status-offline { background: #747f8d; }
 
 /* Body */
 .profile-modal-body {
-    padding: 8px 16px 20px;
+    padding: 12px 20px 24px;
 }
 
-/* Name row with nameplate */
+/* Name row — бейджи ИДУТ ПОД username, а не отдельно */
 .profile-modal-name-row {
     text-align: center;
     margin-bottom: 8px;
+    padding-left: 0;
+    border-left: none;
 }
 
 .profile-modal-displayname {
-    font-size: 20px;
+    font-size: 22px;
     font-weight: 700;
     color: #fff;
     line-height: 1.3;
 }
 
 .profile-modal-username {
-    font-size: 14px;
+    font-size: 15px;
     color: #b9bbbe;
     display: block;
     margin-top: 2px;
 }
 
+/* Badges — ПОД username, центрированные, компактные */
+.profile-modal-badges {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 4px;
+    margin-top: 8px;
+    flex-wrap: wrap;
+}
+
+.profile-badge {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: help;
+    transition: transform 0.2s;
+    width: 28px;
+    height: 28px;
+}
+
+.profile-badge:hover {
+    transform: scale(1.25);
+}
+
+.profile-badge svg {
+    width: 24px;
+    height: 24px;
+}
+
+/* Divider */
 .profile-modal-divider {
     height: 1px;
     background: #2f3136;
-    margin: 12px 0;
+    margin: 14px 0;
 }
 
 /* Sections */
 .profile-modal-section {
-    margin-bottom: 16px;
+    margin-bottom: 14px;
 }
 
 .profile-modal-section-title {
@@ -2228,88 +2245,7 @@ textarea:focus-visible {
 .profile-modal-bio {
     font-size: 14px;
     color: #dcddde;
-    line-height: 1.4;
-}
-
-/* Profile Widgets */
-.profile-widgets-list {
-    display: flex;
-    flex-direction: column;
-    gap: 8px;
-}
-
-.profile-widget-empty {
-    font-size: 13px;
-    color: #72767d;
-    font-style: italic;
-    padding: 8px 0;
-}
-
-.profile-widget-item {
-    display: flex;
-    align-items: center;
-    gap: 10px;
-    background: #1e1f22;
-    border-radius: 8px;
-    padding: 10px 12px;
-    transition: background 0.2s;
-}
-
-.profile-widget-item:hover {
-    background: #2b2d31;
-}
-
-.profile-widget-icon {
-    width: 36px;
-    height: 36px;
-    border-radius: 8px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    background: #2f3136;
-    flex-shrink: 0;
-    overflow: hidden;
-}
-
-.profile-widget-icon img {
-    width: 100%;
-    height: 100%;
-    object-fit: cover;
-}
-
-.profile-widget-icon svg {
-    width: 20px;
-    height: 20px;
-    color: #5865f2;
-}
-
-.profile-widget-info {
-    flex: 1;
-    min-width: 0;
-}
-
-.profile-widget-title {
-    font-size: 14px;
-    font-weight: 600;
-    color: #fff;
-}
-
-.profile-widget-description {
-    font-size: 12px;
-    color: #b9bbbe;
-    margin-top: 2px;
-}
-
-.profile-widget-link {
-    font-size: 13px;
-    color: #5865f2;
-    text-decoration: none;
-    font-weight: 600;
-    white-space: nowrap;
-}
-
-.profile-widget-link:hover {
-    text-decoration: underline;
+    line-height: 1.5;
 }
 
 /* Role badge (crown) */
@@ -2331,7 +2267,7 @@ textarea:focus-visible {
     display: flex;
     flex-direction: column;
     gap: 8px;
-    margin-top: 12px;
+    margin-top: 16px;
 }
 
 .profile-btn {
@@ -2339,7 +2275,7 @@ textarea:focus-visible {
     align-items: center;
     justify-content: center;
     gap: 8px;
-    padding: 10px 16px;
+    padding: 12px 16px;
     border: none;
     border-radius: 8px;
     font-size: 14px;

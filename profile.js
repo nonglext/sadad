@@ -1,13 +1,12 @@
 /**
- * Enhanced Profile Modal Module v2
- * Discord-style profile popup with:
- * - Badges (Nitro-style SVG)
- * - Avatar decorations
- * - Nameplates
- * - Profile banners
- * - Theme colors (Primary/Accent)
- * - Profile Widgets (gaming preferences)
- * - Role badges
+ * Discord-style Profile Modal v3 — REFACTORED
+ * - Карточка 420px
+ * - Аватар 120px со статусом-кружком (как в Discord)
+ * - Бейджи ПОД именем/username строкой
+ * - По умолчанию Nitro badge каждому пользователю
+ * - NO виджетов
+ * - Banner, Decoration, Theme, Nameplate сохранены
+ * - Плавные анимации, Discord-тени
  * @module ProfileModule
  */
 const ProfileModule = (() => {
@@ -18,40 +17,28 @@ const ProfileModule = (() => {
   let currentProfileUserId = null;
 
   /**
-   * SVG icon definitions for badges
+   * SVG badge icons — Discord-style (кристалл/звезда)
    */
   const BADGE_ICONS = {
-    'nitro-badge': `<svg width="22" height="22" viewBox="0 0 24 24" fill="none"><defs><linearGradient id="nitroGrad" x1="0" y1="0" x2="1" y2="1"><stop offset="0%" stop-color="#ff73fa"/><stop offset="100%" stop-color="#5865f2"/></linearGradient></defs><path d="M12 2L2 7v10l10 5 10-5V7L12 2z" fill="url(#nitroGrad)"/><path d="M12 6l-4 2v4l4 2 4-2V8l-4-2z" fill="#fff"/><circle cx="12" cy="12" r="2" fill="#5865f2"/></svg>`,
-    'nitro-classic-badge': `<svg width="22" height="22" viewBox="0 0 24 24" fill="none"><defs><linearGradient id="nitroClassicGrad" x1="0" y1="0" x2="1" y2="1"><stop offset="0%" stop-color="#ff73fa"/><stop offset="100%" stop-color="#9b59b6"/></linearGradient></defs><path d="M12 3L3 8v8l9 5 9-5V8l-9-5z" fill="url(#nitroClassicGrad)"/><path d="M12 7l-3 1.5v3l3 1.5 3-1.5v-3L12 7z" fill="#fff"/></svg>`,
-    'booster-badge': `<svg width="22" height="22" viewBox="0 0 24 24" fill="none"><defs><linearGradient id="boostGrad" x1="0" y1="0" x2="1" y2="1"><stop offset="0%" stop-color="#ff73fa"/><stop offset="100%" stop-color="#f47fff"/></linearGradient></defs><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z" fill="url(#boostGrad)"/></svg>`,
-    'dev-badge': `<svg width="22" height="22" viewBox="0 0 24 24" fill="none"><path d="M12 2L2 7v10l10 5 10-5V7L12 2zm3.5 13.5l-4-4 4-4L14 6l-5 5 5 5 1.5-1.5z" fill="#5865f2"/></svg>`,
-    'mod-badge': `<svg width="22" height="22" viewBox="0 0 24 24" fill="none"><path d="M12 1L3 5v6c0 5.55 3.84 10.74 9 12 5.16-1.26 9-6.45 9-12V5l-9-4zm-2 16l-4-4 1.41-1.41L10 14.17l6.59-6.59L18 9l-8 8z" fill="#43b581"/></svg>`,
-    'verified-badge': `<svg width="22" height="22" viewBox="0 0 24 24" fill="none"><path d="M12 1L3 5v6c0 5.55 3.84 10.74 9 12 5.16-1.26 9-6.45 9-12V5l-9-4zm-2 16l-4-4 1.41-1.41L10 14.17l6.59-6.59L18 9l-8 8z" fill="#3ba55d"/></svg>`,
-    'early-badge': `<svg width="22" height="22" viewBox="0 0 24 24" fill="none"><path d="M12 17.27L18.18 21l-1.64-7.03L22 9.24l-7.19-.61L12 2 9.19 8.63 2 9.24l5.46 4.73L5.82 21z" fill="#faa61a"/></svg>`,
+    'nitro-badge': `<svg width="24" height="24" viewBox="0 0 24 24" fill="none"><defs><linearGradient id="nitroG" x1="0" y1="0" x2="1" y2="1"><stop offset="0%" stop-color="#ff73fa"/><stop offset="100%" stop-color="#5865f2"/></linearGradient></defs><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-1 15l-5-5 1.41-1.41L11 14.17l6.59-6.59L19 9l-8 8z" fill="url(#nitroG)"/><circle cx="12" cy="12" r="3" fill="#fff" opacity="0.3"/></svg>`,
+    'nitro-classic-badge': `<svg width="24" height="24" viewBox="0 0 24 24" fill="none"><defs><linearGradient id="ncG" x1="0" y1="0" x2="1" y2="1"><stop offset="0%" stop-color="#ff73fa"/><stop offset="100%" stop-color="#9b59b6"/></linearGradient></defs><path d="M12 3L3 8v8l9 5 9-5V8l-9-5zm0 2.18l6 3.33v3.98L12 18.3 6 12.49V8.51l6-3.33z" fill="url(#ncG)"/><path d="M12 8l-2 1.5v3L12 14l2-1.5v-3L12 8z" fill="#fff"/></svg>`,
+    'booster-badge': `<svg width="24" height="24" viewBox="0 0 24 24" fill="none"><defs><linearGradient id="bstG" x1="0" y1="0" x2="1" y2="1"><stop offset="0%" stop-color="#ff73fa"/><stop offset="100%" stop-color="#f47fff"/></linearGradient></defs><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z" fill="url(#bstG)"/><circle cx="12" cy="12" r="2" fill="#fff" opacity="0.4"/></svg>`,
+    'dev-badge': `<svg width="24" height="24" viewBox="0 0 24 24" fill="none"><path d="M12 2L2 7v10l10 5 10-5V7L12 2zm5 12.5l-5-5 1.41-1.41L17 12.67l-3.59 3.59L12 14.83l5-5.33V14.5z" fill="#5865f2"/></svg>`,
+    'mod-badge': `<svg width="24" height="24" viewBox="0 0 24 24" fill="none"><path d="M12 1L3 5v6c0 5.55 3.84 10.74 9 12 5.16-1.26 9-6.45 9-12V5l-9-4zm-2 16l-4-4 1.41-1.41L10 14.17l6.59-6.59L18 9l-8 8z" fill="#43b581"/></svg>`,
+    'verified-badge': `<svg width="24" height="24" viewBox="0 0 24 24" fill="none"><path d="M12 1L3 5v6c0 5.55 3.84 10.74 9 12 5.16-1.26 9-6.45 9-12V5l-9-4zm-2 16l-4-4 1.41-1.41L10 14.17l6.59-6.59L18 9l-8 8z" fill="#3ba55d"/></svg>`,
+    'early-badge': `<svg width="24" height="24" viewBox="0 0 24 24" fill="none"><path d="M12 17.27L18.18 21l-1.64-7.03L22 9.24l-7.19-.61L12 2 9.19 8.63 2 9.24l5.46 4.73L5.82 21z" fill="#faa61a"/></svg>`,
   };
 
-  /**
-   * Returns SVG HTML for a badge icon.
-   * @param {string} iconName
-   * @returns {string}
-   */
   function getBadgeSVG(iconName) {
     return BADGE_ICONS[iconName] || '';
   }
 
-  /**
-   * Initialize module with app dependencies.
-   * @param {object} dependencies
-   */
   function init(dependencies) {
     deps = dependencies;
     buildModal();
     bindEvents();
   }
 
-  /**
-   * Inject profile modal markup into the document.
-   */
   function buildModal() {
     if (document.getElementById('profileModalOverlay')) return;
 
@@ -61,23 +48,24 @@ const ProfileModule = (() => {
     overlay.setAttribute('aria-hidden', 'true');
 
     overlay.innerHTML = `
-      <div class="profile-modal" role="dialog" aria-labelledby="profileModalTitle">
+      <div class="profile-modal" role="dialog">
         <button type="button" class="profile-modal-close" aria-label="Close">&times;</button>
         <!-- Banner -->
         <div class="profile-modal-banner" id="profileBanner"></div>
-        <!-- Avatar + Decoration -->
+        <!-- Avatar Container — большой аватар + статус-кружок -->
         <div class="profile-modal-avatar-container" id="profileAvatarContainer">
           <div class="profile-modal-avatar-decoration" id="profileAvatarDecoration"></div>
           <div class="profile-modal-avatar" id="profileAvatar">U</div>
           <div class="profile-modal-status" id="profileStatus">Online</div>
         </div>
-        <!-- Badges Row -->
-        <div class="profile-modal-badges" id="profileBadges"></div>
         <!-- Body -->
         <div class="profile-modal-body">
+          <!-- Name Row (имя + юзернейм + бейджи под ними) -->
           <div class="profile-modal-name-row" id="profileNameplate">
             <h2 class="profile-modal-displayname" id="profileDisplayName">Display Name</h2>
             <span class="profile-modal-username" id="profileUsername">@username</span>
+            <!-- Badges placed right under the username -->
+            <div class="profile-modal-badges" id="profileBadges"></div>
           </div>
           <div class="profile-modal-divider"></div>
           <!-- About Me -->
@@ -85,17 +73,7 @@ const ProfileModule = (() => {
             <div class="profile-modal-section-title">About Me</div>
             <p class="profile-modal-bio" id="profileAboutMe">No description set.</p>
           </div>
-          <!-- Profile Widgets (Gaming) -->
-          <div class="profile-modal-section" id="profileWidgetsSection">
-            <div class="profile-modal-section-title">
-              <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M21 6H3C1.9 6 1 6.9 1 8v8c0 1.1.9 2 2 2h18c1.1 0 2-.9 2-2V8c0-1.1-.9-2-2-2zm0 10H3V8h18v8zM6 15h2v-2h2v-2H8V9H6v2H4v2h2v2z"/></svg>
-              Profile Widgets
-            </div>
-            <div class="profile-widgets-list" id="profileWidgetsList">
-              <div class="profile-widget-empty">No widgets set.</div>
-            </div>
-          </div>
-          <!-- Role / Owner Crown for Group DMs -->
+          <!-- Role (for group DMs) -->
           <div class="profile-modal-section" id="profileRoleSection" style="display:none;">
             <div class="profile-modal-section-title">Role</div>
             <div class="profile-role-badge" id="profileRoleBadge">
@@ -129,26 +107,16 @@ const ProfileModule = (() => {
     document.body.appendChild(overlay);
   }
 
-  /**
-   * Bind modal events.
-   */
   function bindEvents() {
     overlay.querySelector('.profile-modal-close').addEventListener('click', close);
     overlay.addEventListener('click', (e) => {
       if (e.target === overlay) close();
     });
-
     document.addEventListener('keydown', (e) => {
-      if (e.key === 'Escape' && overlay.classList.contains('visible')) {
-        close();
-      }
+      if (e.key === 'Escape' && overlay.classList.contains('visible')) close();
     });
   }
 
-  /**
-   * Apply profile theme colors to the modal.
-   * @param {object} theme - { primaryColor, accentColor }
-   */
   function applyProfileTheme(theme) {
     const modal = overlay.querySelector('.profile-modal');
     if (!theme) return;
@@ -156,132 +124,58 @@ const ProfileModule = (() => {
     modal.style.setProperty('--profile-accent', theme.accentColor || '#3ba55d');
   }
 
-  /**
-   * Set profile banner.
-   * @param {string|null} bannerUrl
-   */
   function setBanner(bannerUrl) {
-    const bannerEl = document.getElementById('profileBanner');
-    if (!bannerEl) return;
+    const el = document.getElementById('profileBanner');
+    if (!el) return;
     if (bannerUrl) {
-      bannerEl.style.backgroundImage = `url(${bannerUrl})`;
-      bannerEl.style.display = 'block';
+      el.style.backgroundImage = `url(${bannerUrl})`;
+      el.style.display = 'block';
     } else {
-      bannerEl.style.backgroundImage = '';
-      bannerEl.style.display = 'none';
+      el.style.backgroundImage = '';
+      el.style.display = 'none';
     }
   }
 
-  /**
-   * Set avatar decoration.
-   * @param {object|null} decoration - { type, color, url }
-   */
   function setAvatarDecoration(decoration) {
     const decorEl = document.getElementById('profileAvatarDecoration');
     if (!decorEl) return;
     if (decoration && decoration.type === 'ring') {
-      decorEl.style.border = `3px solid ${decoration.color || '#5865f2'}`;
-      decorEl.style.width = '96px';
-      decorEl.style.height = '96px';
-      decorEl.style.borderRadius = '50%';
-      decorEl.style.position = 'absolute';
-      decorEl.style.top = '-4px';
-      decorEl.style.left = '-4px';
-      decorEl.style.background = 'transparent';
-      decorEl.style.display = 'block';
-      decorEl.style.boxShadow = `0 0 12px ${decoration.color || '#5865f2'}44`;
+      decorEl.style.cssText = `border:3px solid ${decoration.color||'#5865f2'};width:132px;height:132px;border-radius:50%;position:absolute;top:-6px;left:-6px;background:transparent;display:block;box-shadow:0 0 16px ${decoration.color||'#5865f2'}44`;
     } else if (decoration && decoration.url) {
-      decorEl.style.backgroundImage = `url(${decoration.url})`;
-      decorEl.style.backgroundSize = 'cover';
-      decorEl.style.width = '100px';
-      decorEl.style.height = '100px';
-      decorEl.style.borderRadius = '50%';
-      decorEl.style.position = 'absolute';
-      decorEl.style.top = '-6px';
-      decorEl.style.left = '-6px';
-      decorEl.style.display = 'block';
+      decorEl.style.cssText = `background-image:url(${decoration.url});background-size:cover;width:140px;height:140px;border-radius:50%;position:absolute;top:-10px;left:-10px;display:block`;
     } else {
       decorEl.style.display = 'none';
     }
   }
 
-  /**
-   * Render badges.
-   * @param {Array} badges - Array of badge objects
-   */
   function renderBadges(badges) {
-    const badgesEl = document.getElementById('profileBadges');
-    if (!badgesEl) return;
-    badgesEl.innerHTML = '';
-    if (!badges || badges.length === 0) {
-      badgesEl.style.display = 'none';
-      return;
-    }
-    badgesEl.style.display = 'flex';
+    const el = document.getElementById('profileBadges');
+    if (!el) return;
+    el.innerHTML = '';
+    if (!badges || badges.length === 0) { el.style.display = 'none'; return; }
+    el.style.display = 'flex';
     badges.forEach(badge => {
-      const badgeEl = document.createElement('div');
-      badgeEl.className = 'profile-badge';
-      badgeEl.title = badge.description || badge.name;
-      // Use SVG if available, otherwise fallback to text
+      const b = document.createElement('div');
+      b.className = 'profile-badge';
+      b.title = badge.description || badge.name;
       const svg = getBadgeSVG(badge.icon);
-      if (svg) {
-        badgeEl.innerHTML = svg;
-      } else {
-        badgeEl.textContent = badge.name.charAt(0);
-      }
-      badgesEl.appendChild(badgeEl);
+      b.innerHTML = svg || badge.name.charAt(0);
+      el.appendChild(b);
     });
   }
 
-  /**
-   * Render profile widgets (gaming preferences).
-   * @param {Array} widgets - Array of widget objects
-   */
-  function renderWidgets(widgets) {
-    const listEl = document.getElementById('profileWidgetsList');
-    const sectionEl = document.getElementById('profileWidgetsSection');
-    if (!listEl || !sectionEl) return;
-    listEl.innerHTML = '';
-    if (!widgets || widgets.length === 0) {
-      listEl.innerHTML = '<div class="profile-widget-empty">No widgets set.</div>';
-      return;
-    }
-    widgets.forEach(widget => {
-      const widgetEl = document.createElement('div');
-      widgetEl.className = 'profile-widget-item';
-      widgetEl.innerHTML = `
-        <div class="profile-widget-icon">
-          ${widget.icon 
-            ? `<img src="${widget.icon}" alt="${widget.title}" />` 
-            : `<svg width="24" height="24" viewBox="0 0 24 24" fill="currentColor"><path d="M21 6H3C1.9 6 1 6.9 1 8v8c0 1.1.9 2 2 2h18c1.1 0 2-.9 2-2V8c0-1.1-.9-2-2-2zm0 10H3V8h18v8z"/></svg>`
-          }
-        </div>
-        <div class="profile-widget-info">
-          <div class="profile-widget-title">${widget.title}</div>
-          <div class="profile-widget-description">${widget.description || ''}</div>
-        </div>
-        ${widget.url ? `<a href="${widget.url}" class="profile-widget-link" target="_blank">${widget.type === 'game' ? 'Play' : 'Visit'}</a>` : ''}
-      `;
-      listEl.appendChild(widgetEl);
-    });
-  }
-
-  /**
-   * Apply nameplate style to display name.
-   * @param {object} nameplate - { style, color }
-   */
   function applyNameplate(nameplate) {
-    const nameRow = document.getElementById('profileNameplate');
-    if (!nameRow || !nameplate) return;
-    nameRow.style.borderLeft = nameplate.color ? `3px solid ${nameplate.color}` : 'none';
-    nameRow.style.paddingLeft = nameplate.color ? '12px' : '';
+    const row = document.getElementById('profileNameplate');
+    if (!row || !nameplate) return;
+    if (nameplate.color) {
+      row.style.paddingLeft = '12px';
+      row.style.borderLeft = `3px solid ${nameplate.color}`;
+    } else {
+      row.style.paddingLeft = '';
+      row.style.borderLeft = 'none';
+    }
   }
 
-  /**
-   * Open profile for a given user.
-   * @param {number|string} userId
-   * @param {object} userData - Extended profile data
-   */
   async function open(userId, userData) {
     currentProfileUserId = userId;
     let user = userData;
@@ -295,7 +189,6 @@ const ProfileModule = (() => {
         return;
       }
     }
-
     if (!user) return;
 
     const avatarEl = document.getElementById('profileAvatar');
@@ -309,9 +202,9 @@ const ProfileModule = (() => {
     const messageBtn = document.getElementById('profileMessageBtn');
     const roleSection = document.getElementById('profileRoleSection');
 
-    // Set avatar
-    const avatarLetter = (user.displayName || user.username || 'U').charAt(0).toUpperCase();
-    avatarEl.textContent = user.avatar && user.avatar.startsWith('http') ? '' : avatarLetter;
+    // Avatar
+    const letter = (user.displayName || user.username || 'U').charAt(0).toUpperCase();
+    avatarEl.textContent = (user.avatar && user.avatar.startsWith('http')) ? '' : letter;
     if (user.avatar && user.avatar.startsWith('http')) {
       avatarEl.style.backgroundImage = `url(${user.avatar})`;
       avatarEl.style.backgroundSize = 'cover';
@@ -322,59 +215,51 @@ const ProfileModule = (() => {
       avatarEl.style.color = '';
     }
 
-    // Status
+    // Status — как в Discord: цветной кружок внизу-справа аватарки
     statusEl.textContent = user.status || 'Offline';
-    statusEl.className = 'profile-modal-status ' + (user.status === 'Online' ? 'status-online' : user.status === 'Idle' ? 'status-idle' : user.status === 'DND' ? 'status-dnd' : 'status-offline');
+    statusEl.className = 'profile-modal-status ' + (
+      user.status === 'Online' ? 'status-online' :
+      user.status === 'Idle' ? 'status-idle' :
+      user.status === 'DND' ? 'status-dnd' : 'status-offline'
+    );
 
-    // Display name and username
     displayNameEl.textContent = user.displayName || user.username;
     usernameEl.textContent = '@' + user.username;
-
-    // About Me
     aboutMeEl.textContent = user.aboutMe || 'No description set.';
 
-    // ---- NEW PROFILE FEATURES ----
-
-    // 1. Banner
+    // Banner
     setBanner(user.profileBanner || deps.appState.profileBanner || null);
-
-    // 2. Avatar Decoration
+    // Decoration
     setAvatarDecoration(user.avatarDecoration || deps.appState.avatarDecoration || null);
-
-    // 3. Profile Theme
+    // Theme
     applyProfileTheme(user.profileTheme || deps.appState.profileTheme || null);
-
-    // 4. Nameplate
+    // Nameplate
     applyNameplate(user.nameplate || deps.appState.nameplate || null);
 
-    // 5. Badges - merge system badges with user's earned badges
+    // Badges — каждому пользователю по умолчанию выдаётся Nitro
     const allBadges = [];
-    if (deps.appState.badges) {
-      // Show some badges as demo if user has none
-      const earnedBadgeIds = (user.userBadges || deps.appState.userBadges || []).map(b => b.badgeId || b.id);
+    if (deps.appState.badges && deps.appState.badges.length > 0) {
+      // Всегда добавляем Nitro как первый элемент
+      const nitroBadge = deps.appState.badges.find(b => b.id === 'nitro');
+      if (nitroBadge) allBadges.push(nitroBadge);
+
+      // Добавляем остальные по наличию
+      const earnedIds = (user.userBadges || deps.appState.userBadges || []).map(b => b.badgeId || b.id);
       deps.appState.badges.forEach(b => {
-        if (earnedBadgeIds.includes(b.id)) {
+        if (b.id !== 'nitro' && earnedIds.includes(b.id)) {
           allBadges.push(b);
         }
       });
-      // Always show developer badge for current user for demo
+
+      // Dev badge для владельца профиля
       if (String(user.id) === String(deps.appState.user?.id) && !allBadges.find(b => b.id === 'developer')) {
         const devBadge = deps.appState.badges.find(b => b.id === 'developer');
         if (devBadge) allBadges.push(devBadge);
       }
     }
-    // If no badges earned, show first two as "sample"
-    if (allBadges.length === 0 && deps.appState.badges) {
-      allBadges.push(deps.appState.badges[0]); // Nitro
-      allBadges.push(deps.appState.badges[2]); // Booster
-    }
     renderBadges(allBadges);
 
-    // 6. Profile Widgets
-    const userWidgets = user.profileWidgets || deps.appState.profileWidgets || [];
-    renderWidgets(userWidgets);
-
-    // 7. Role section for group DMs
+    // Role section for group DMs
     if (user.isGroupOwner) {
       roleSection.style.display = 'block';
       roleSection.querySelector('#profileRoleBadge span').textContent = user.roleLabel || 'Group Owner';
@@ -382,11 +267,11 @@ const ProfileModule = (() => {
       roleSection.style.display = 'none';
     }
 
-    // Actions visibility
-    const isOwnProfile = deps.appState.user && String(deps.appState.user.id) === String(userId);
-    editBtn.style.display = isOwnProfile ? 'flex' : 'none';
+    // Actions
+    const isOwn = deps.appState.user && String(deps.appState.user.id) === String(userId);
+    editBtn.style.display = isOwn ? 'flex' : 'none';
 
-    if (!isOwnProfile) {
+    if (!isOwn) {
       const isFriend = deps.appState.friends.some(f => String(f.id) === String(userId));
       addFriendBtn.style.display = isFriend ? 'none' : 'flex';
       removeFriendBtn.style.display = isFriend ? 'flex' : 'none';
@@ -397,63 +282,34 @@ const ProfileModule = (() => {
       messageBtn.style.display = 'none';
     }
 
-    // Bind actions
-    editBtn.onclick = () => {
-      close();
-      if (typeof SettingsModule !== 'undefined' && SettingsModule.open) {
-        SettingsModule.open();
-      }
-    };
-
+    editBtn.onclick = () => { close(); if (typeof SettingsModule !== 'undefined') SettingsModule.open(); };
     addFriendBtn.onclick = async () => {
       try {
-        await deps.fetchWithError('/api/friends/request', {
-          method: 'POST',
-          body: JSON.stringify({ friendId: userId })
-        });
+        await deps.fetchWithError('/api/friends/request', { method: 'POST', body: JSON.stringify({ friendId: userId }) });
         addFriendBtn.textContent = 'Request Sent!';
         addFriendBtn.disabled = true;
         setTimeout(() => { addFriendBtn.disabled = false; }, 2000);
-      } catch (error) {
-        console.error('[Profile] Add friend error:', error);
-      }
+      } catch (e) { console.error(e); }
     };
-
     removeFriendBtn.onclick = async () => {
       if (!confirm('Remove this friend?')) return;
       try {
-        await deps.fetchWithError(`/api/friends/${userId}`, {
-          method: 'DELETE'
-        });
+        await deps.fetchWithError(`/api/friends/${userId}`, { method: 'DELETE' });
         close();
-        if (typeof loadFriends === 'function') {
-          loadFriends();
-        }
-      } catch (error) {
-        console.error('[Profile] Remove friend error:', error);
-      }
+        if (typeof loadFriends === 'function') loadFriends();
+      } catch (e) { console.error(e); }
     };
-
-    messageBtn.onclick = () => {
-      close();
-      if (typeof startDM === 'function') {
-        startDM(userId, user.username);
-      }
-    };
+    messageBtn.onclick = () => { close(); if (typeof startDM === 'function') startDM(userId, user.username); };
 
     overlay.classList.add('visible');
     overlay.setAttribute('aria-hidden', 'false');
   }
 
-  /**
-   * Close profile modal.
-   */
   function close() {
     if (!overlay) return;
     overlay.classList.remove('visible');
     overlay.setAttribute('aria-hidden', 'true');
     currentProfileUserId = null;
-    // Reset theme variables
     const modal = overlay.querySelector('.profile-modal');
     if (modal) {
       modal.style.removeProperty('--profile-primary');
