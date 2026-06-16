@@ -1998,463 +1998,1029 @@ textarea:focus-visible {
     position: relative;
 }
 
-.friend-item::before {
-    content: '';
-    position: absolute;
-    left: 0;
-    top: 0;
-    bottom: 0;
-    width: 4px;
-    background: linear-gradient(180deg, #5865f2 0%, #7289da 100%);
-    border-radius: 4px 0 0 4px;
-    opacity: 0;
-    transition: opacity 0.2s ease;
-}
-
-.friend-item:hover::before {
-    opacity: 1;
-}
-
-/**
- * ====================================================================
- * ENHANCED CHANNEL ACTIVE STATE
- * ====================================================================
- */
-
-.channel.active {
-    background: linear-gradient(90deg, rgba(88, 101, 242, 0.2) 0%, transparent 100%);
-    border-left: 3px solid #5865f2;
-    padding-left: 5px;
-}
-
-.channel.active span {
-    font-weight: 500;
-}
-
-/**
- * ====================================================================
- * TOOLTIP-LIKE HOVER EFFECTS
- * ====================================================================
- */
-
-.friend-action-btn {
-    position: relative;
-}
-
-.friend-action-btn::after {
-    content: attr(title);
-    position: absolute;
-    bottom: 100%;
-    left: 50%;
-    transform: translateX(-50%);
-    background: rgba(0, 0, 0, 0.8);
-    color: white;
-    padding: 6px 8px;
-    border-radius: 4px;
-    font-size: 12px;
-    white-space: nowrap;
-    opacity: 0;
-    pointer-events: none;
-    transition: opacity 0.2s ease;
-    margin-bottom: 8px;
-    z-index: 1000;
-}
-
-.friend-action-btn:hover::after {
-    opacity: 1;
-}
-
-/**
- * ====================================================================
- * CALL INTERFACE ENHANCED ANIMATIONS
- * ====================================================================
- */
-
-.call-interface {
-    box-shadow: 0 12px 48px rgba(0, 0, 0, 0.6),
-                0 0 0 1px rgba(88, 101, 242, 0.2);
-}
-
-.participant video {
-    animation: videoLoad 0.3s ease;
-}
-
-@keyframes videoLoad {
-    from {
-        opacity: 0;
-    }
-    to {
-        opacity: 1;
-    }
-}
-
-/**
- * ====================================================================
- * REACTION BADGE IMPROVEMENTS
- * ====================================================================
- */
-
-.reaction {
-    animation: reactionAppear 0.2s cubic-bezier(0.34, 1.56, 0.64, 1);
-}
-
-@keyframes reactionAppear {
-    from {
-        opacity: 0;
-        transform: scale(0.8) rotate(-10deg);
-    }
-    to {
-        opacity: 1;
-        transform: scale(1) rotate(0);
-    }
-}
-
-/**
- * ====================================================================
- * EMPTY STATE STYLING
- * ====================================================================
- */
-
-.friends-empty,
-.dm-empty {
-    text-align: center;
-    padding: 40px 20px;
-    color: #72767d;
-    font-size: 14px;
-}
-
-.friends-empty::before {
-    content: '';
-    display: block;
-    font-size: 40px;
-    margin-bottom: 16px;
-}
-
-/**
- * ====================================================================
- * RESPONSIVE ADJUSTMENTS
- * ====================================================================
- */
-
-@media (max-width: 1200px) {
-    .channel-list {
-        width: 200px;
-    }
-    
-    .call-interface {
-        width: 500px;
-    }
-}
-
-@media (max-width: 768px) {
-    body {
-        flex-direction: column;
-    }
-    
-    .server-list {
-        width: 100%;
-        height: 60px;
-        flex-direction: row;
-        overflow-x: auto;
-    }
-    
-    .channel-list {
-        width: 100%;
-        height: 60px;
-        overflow-x: auto;
-        overflow-y: hidden;
-    }
-    
-    .channels-view,
-    .dm-list-view {
-        display: none !important;
-    }
-    
-    .call-interface {
-        width: 90vw;
-        height: 90vh;
-    }
-    
-    .participant {
-        min-width: 100px;
-        min-height: 75px;
-    }
-}
-
-/**
- * ====================================================================
- * DARK MODE ENHANCEMENTS
- * ====================================================================
- */
-
-/* Already using Discord dark mode colors, but enhance contrast */
-@media (prefers-color-scheme: dark) {
-    input,
-    textarea {
-        background-color: #292b2f;
-        color: #dcddde;
-    }
-    
-    button {
-        background-color: #5865f2;
-        color: white;
-    }
-}
-
-/**
- * ====================================================================
- * PERFORMANCE OPTIMIZATIONS
- * ====================================================================
- */
-
-/* Optimize repaints for smooth scrolling */
-.messages {
-    will-change: scroll-position;
-}
-
-/* Optimize animations for non-critical elements */
-.emoji-picker,
-.incoming-call {
-    contain: layout style paint;
-}
-
-/* GPU acceleration for smooth transforms */
-.participant,
-.call-interface,
-.message-group {
-    transform: translateZ(0);
-    backface-visibility: hidden;
-}
-
 /* ====================================================================
- * SETTINGS MODAL
+ * ENHANCED PROFILE MODAL (Badges, Banner, Deco, Widgets)
  * ==================================================================== */
 
-.settings-modal-overlay {
+.profile-modal-overlay {
     position: fixed;
-    inset: 0;
-    background: var(--discord-overlay);
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(0, 0, 0, 0.7);
     display: flex;
     align-items: center;
     justify-content: center;
-    z-index: 10000;
+    z-index: 5000;
     opacity: 0;
-    visibility: hidden;
-    transition: opacity 0.2s ease, visibility 0.2s ease;
-    backdrop-filter: blur(2px);
+    pointer-events: none;
+    transition: opacity 0.2s ease;
+    backdrop-filter: blur(4px);
 }
 
-.settings-modal-overlay.visible {
+.profile-modal-overlay.visible {
     opacity: 1;
-    visibility: visible;
+    pointer-events: auto;
 }
 
-.settings-modal {
-    width: 440px;
-    max-width: calc(100vw - 32px);
-    background: var(--discord-darker);
-    border-radius: 8px;
-    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.45);
-    overflow: hidden;
-    animation: modalSlideIn 0.25s ease;
+.profile-modal {
+    background: #111214;
+    border-radius: 12px;
+    width: 340px;
+    max-width: 90vw;
+    max-height: 90vh;
+    overflow-y: auto;
+    position: relative;
+    box-shadow: 0 8px 40px rgba(0, 0, 0, 0.6);
+    --profile-primary: #5865f2;
+    --profile-accent: #3ba55d;
 }
 
-@keyframes modalSlideIn {
-    from {
-        opacity: 0;
-        transform: translateY(-12px) scale(0.98);
-    }
-    to {
-        opacity: 1;
-        transform: translateY(0) scale(1);
-    }
+/* Banner */
+.profile-modal-banner {
+    width: 100%;
+    height: 120px;
+    background: linear-gradient(135deg, var(--profile-primary), #1e1f23);
+    background-size: cover;
+    background-position: center;
+    border-radius: 12px 12px 0 0;
+    display: none;
 }
 
-.settings-modal-header {
+/* Close btn */
+.profile-modal-close {
+    position: absolute;
+    top: 12px;
+    right: 12px;
+    width: 32px;
+    height: 32px;
+    background: rgba(0, 0, 0, 0.5);
+    border: none;
+    color: #fff;
+    font-size: 20px;
+    border-radius: 50%;
+    cursor: pointer;
     display: flex;
     align-items: center;
-    justify-content: space-between;
-    padding: 16px 20px;
-    border-bottom: 1px solid var(--discord-darkest);
+    justify-content: center;
+    z-index: 10;
+    transition: all 0.2s;
 }
 
-.settings-modal-header h2 {
+.profile-modal-close:hover {
+    background: rgba(237, 66, 69, 0.8);
+    transform: scale(1.1);
+}
+
+/* Avatar container with decoration */
+.profile-modal-avatar-container {
+    display: flex;
+    justify-content: center;
+    margin-top: -50px;
+    position: relative;
+    z-index: 5;
+}
+
+.profile-modal-avatar-decoration {
+    position: absolute;
+    width: 100px;
+    height: 100px;
+    border-radius: 50%;
+    top: -6px;
+    left: 50%;
+    transform: translateX(-50%);
+    display: none;
+    pointer-events: none;
+}
+
+.profile-modal-avatar {
+    width: 88px;
+    height: 88px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, var(--profile-primary), #5865f2);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 36px;
+    font-weight: 600;
+    color: #fff;
+    position: relative;
+    border: 4px solid #111214;
+    cursor: pointer;
+    transition: transform 0.2s;
+}
+
+.profile-modal-avatar:hover {
+    transform: scale(1.05);
+}
+
+/* Status indicator on profile */
+.profile-modal-status {
+    position: absolute;
+    bottom: 4px;
+    right: 4px;
+    width: 22px;
+    height: 22px;
+    border-radius: 50%;
+    background: #3ba55d;
+    border: 3px solid #111214;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 10px;
+    color: #fff;
+    text-indent: -9999px;
+}
+
+.profile-modal-status.status-online {
+    background: #3ba55d;
+}
+
+.profile-modal-status.status-idle {
+    background: #faa61a;
+}
+
+.profile-modal-status.status-dnd {
+    background: #ed4245;
+}
+
+.profile-modal-status.status-offline {
+    background: #747f8d;
+}
+
+/* Badges row */
+.profile-modal-badges {
+    display: flex;
+    justify-content: center;
+    gap: 6px;
+    padding: 12px 16px 4px;
+    flex-wrap: wrap;
+}
+
+.profile-badge {
+    width: 28px;
+    height: 28px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: help;
+    transition: transform 0.2s;
+}
+
+.profile-badge:hover {
+    transform: scale(1.2);
+}
+
+.profile-badge svg {
+    width: 22px;
+    height: 22px;
+}
+
+/* Body */
+.profile-modal-body {
+    padding: 8px 16px 20px;
+}
+
+/* Name row with nameplate */
+.profile-modal-name-row {
+    text-align: center;
+    margin-bottom: 8px;
+}
+
+.profile-modal-displayname {
     font-size: 20px;
     font-weight: 700;
-    color: var(--discord-text-header);
+    color: #fff;
+    line-height: 1.3;
 }
 
-.settings-modal-close {
-    background: none;
-    border: none;
-    color: var(--discord-text-muted);
-    font-size: 24px;
-    line-height: 1;
-    cursor: pointer;
-    padding: 4px 8px;
-    border-radius: 4px;
-    transition: color 0.15s, background-color 0.15s;
+.profile-modal-username {
+    font-size: 14px;
+    color: #b9bbbe;
+    display: block;
+    margin-top: 2px;
 }
 
-.settings-modal-close:hover {
-    color: var(--discord-text-header);
-    background: var(--discord-hover);
+.profile-modal-divider {
+    height: 1px;
+    background: #2f3136;
+    margin: 12px 0;
 }
 
-.settings-modal-body {
-    padding: 20px;
+/* Sections */
+.profile-modal-section {
+    margin-bottom: 16px;
+}
+
+.profile-modal-section-title {
+    font-size: 12px;
+    font-weight: 700;
+    color: #b9bbbe;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    margin-bottom: 8px;
     display: flex;
-    flex-direction: column;
-    gap: 16px;
+    align-items: center;
+    gap: 6px;
 }
 
-.settings-field {
+.profile-modal-bio {
+    font-size: 14px;
+    color: #dcddde;
+    line-height: 1.4;
+}
+
+/* Profile Widgets */
+.profile-widgets-list {
     display: flex;
     flex-direction: column;
     gap: 8px;
 }
 
-.settings-field label {
-    font-size: 12px;
-    font-weight: 700;
-    text-transform: uppercase;
-    color: var(--discord-text-muted);
-    letter-spacing: 0.02em;
+.profile-widget-empty {
+    font-size: 13px;
+    color: #72767d;
+    font-style: italic;
+    padding: 8px 0;
 }
 
-.settings-field input,
-.settings-field select {
-    background: var(--discord-input-bg);
-    border: 1px solid var(--discord-darkest);
-    border-radius: 4px;
-    padding: 10px 12px;
-    color: var(--discord-text-normal);
-    font-size: 16px;
-    transition: border-color 0.15s;
-}
-
-.settings-field input:focus,
-.settings-field select:focus {
-    outline: none;
-    border-color: var(--discord-blurple);
-}
-
-.settings-field-hint {
-    font-size: 12px;
-    color: var(--discord-text-muted);
-}
-
-.settings-error {
-    color: var(--discord-danger);
-    font-size: 14px;
-}
-
-.settings-modal-footer {
+.profile-widget-item {
     display: flex;
-    justify-content: flex-end;
-    gap: 12px;
-    padding: 16px 20px;
-    background: var(--discord-dark);
+    align-items: center;
+    gap: 10px;
+    background: #1e1f22;
+    border-radius: 8px;
+    padding: 10px 12px;
+    transition: background 0.2s;
 }
 
-.settings-btn {
-    padding: 10px 16px;
-    border-radius: 4px;
-    border: none;
+.profile-widget-item:hover {
+    background: #2b2d31;
+}
+
+.profile-widget-icon {
+    width: 36px;
+    height: 36px;
+    border-radius: 8px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: #2f3136;
+    flex-shrink: 0;
+    overflow: hidden;
+}
+
+.profile-widget-icon img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+.profile-widget-icon svg {
+    width: 20px;
+    height: 20px;
+    color: #5865f2;
+}
+
+.profile-widget-info {
+    flex: 1;
+    min-width: 0;
+}
+
+.profile-widget-title {
     font-size: 14px;
-    font-weight: 500;
-    cursor: pointer;
-    transition: background-color 0.15s, transform 0.1s;
+    font-weight: 600;
+    color: #fff;
 }
 
-.settings-btn:active {
-    transform: scale(0.98);
+.profile-widget-description {
+    font-size: 12px;
+    color: #b9bbbe;
+    margin-top: 2px;
 }
 
-.settings-btn-cancel {
-    background: transparent;
-    color: var(--discord-text-normal);
+.profile-widget-link {
+    font-size: 13px;
+    color: #5865f2;
+    text-decoration: none;
+    font-weight: 600;
+    white-space: nowrap;
 }
 
-.settings-btn-cancel:hover {
+.profile-widget-link:hover {
     text-decoration: underline;
 }
 
+/* Role badge (crown) */
+.profile-role-badge {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    background: rgba(250, 166, 26, 0.1);
+    border: 1px solid rgba(250, 166, 26, 0.3);
+    border-radius: 8px;
+    padding: 8px 14px;
+    color: #faa61a;
+    font-size: 14px;
+    font-weight: 600;
+}
+
+/* Action buttons */
+.profile-modal-actions {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    margin-top: 12px;
+}
+
+.profile-btn {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    padding: 10px 16px;
+    border: none;
+    border-radius: 8px;
+    font-size: 14px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s;
+    width: 100%;
+}
+
+.profile-btn-primary {
+    background: var(--profile-primary, #5865f2);
+    color: #fff;
+}
+
+.profile-btn-primary:hover {
+    filter: brightness(1.15);
+}
+
+.profile-btn-secondary {
+    background: #2f3136;
+    color: #dcddde;
+}
+
+.profile-btn-secondary:hover {
+    background: #3c3f45;
+    color: #fff;
+}
+
+.profile-btn-danger {
+    background: rgba(237, 66, 69, 0.2);
+    color: #ed4245;
+}
+
+.profile-btn-danger:hover {
+    background: rgba(237, 66, 69, 0.3);
+}
+
+.profile-btn svg {
+    width: 16px;
+    height: 16px;
+    flex-shrink: 0;
+}
+
+/* ====================================================================
+ * SETTINGS MODAL (Enhanced)
+ * ==================================================================== */
+
+.settings-modal-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(0, 0, 0, 0.75);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 6000;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.2s ease;
+    backdrop-filter: blur(4px);
+}
+
+.settings-modal-overlay.visible {
+    opacity: 1;
+    pointer-events: auto;
+}
+
+.settings-modal {
+    background: #2f3136;
+    border-radius: 12px;
+    width: 520px;
+    max-width: 92vw;
+    max-height: 85vh;
+    display: flex;
+    flex-direction: column;
+    box-shadow: 0 8px 40px rgba(0, 0, 0, 0.5);
+}
+
+.settings-modal-header {
+    padding: 20px 24px 16px;
+    border-bottom: 1px solid #202225;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.settings-modal-header h2 {
+    font-size: 20px;
+    font-weight: 700;
+    color: #fff;
+}
+
+.settings-modal-close {
+    width: 32px;
+    height: 32px;
+    background: none;
+    border: none;
+    color: #72767d;
+    font-size: 24px;
+    cursor: pointer;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.2s;
+}
+
+.settings-modal-close:hover {
+    background: rgba(237, 66, 69, 0.2);
+    color: #ed4245;
+}
+
+.settings-modal-body {
+    padding: 20px 24px;
+    overflow-y: auto;
+    flex: 1;
+}
+
+.settings-section {
+    margin-bottom: 24px;
+    padding-bottom: 20px;
+    border-bottom: 1px solid #202225;
+}
+
+.settings-section:last-child {
+    border-bottom: none;
+    margin-bottom: 0;
+    padding-bottom: 0;
+}
+
+.settings-section-title {
+    font-size: 14px;
+    font-weight: 700;
+    color: #b9bbbe;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    margin-bottom: 16px;
+}
+
+.settings-field {
+    margin-bottom: 14px;
+}
+
+.settings-field label {
+    display: block;
+    font-size: 12px;
+    font-weight: 600;
+    color: #b9bbbe;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    margin-bottom: 6px;
+}
+
+.settings-field input[type="text"],
+.settings-field input[type="url"],
+.settings-field input[type="color"],
+.settings-field textarea,
+.settings-field select {
+    width: 100%;
+    background: #202225;
+    border: 1px solid #202225;
+    border-radius: 4px;
+    padding: 10px 12px;
+    color: #dcddde;
+    font-size: 14px;
+    outline: none;
+    transition: border-color 0.2s;
+}
+
+.settings-field input[type="text"]:focus,
+.settings-field input[type="url"]:focus,
+.settings-field textarea:focus,
+.settings-field select:focus {
+    border-color: #5865f2;
+}
+
+.settings-field input[type="color"] {
+    height: 40px;
+    padding: 4px;
+    cursor: pointer;
+}
+
+.settings-field select {
+    cursor: pointer;
+    appearance: none;
+    background-image: url("data:image/svg+xml,%3Csvg width='12' height='12' viewBox='0 0 12 12' fill='%23b9bbbe'%3E%3Cpath d='M6 8L1 3h10z'/%3E%3C/svg%3E");
+    background-repeat: no-repeat;
+    background-position: right 12px center;
+    padding-right: 36px;
+}
+
+.settings-field textarea {
+    resize: vertical;
+    min-height: 72px;
+}
+
+.settings-field-hint {
+    display: block;
+    font-size: 11px;
+    color: #72767d;
+    margin-top: 4px;
+}
+
+.settings-row {
+    display: flex;
+    gap: 12px;
+}
+
+.settings-field-half {
+    flex: 1;
+}
+
+.settings-widgets-list {
+    margin-bottom: 12px;
+}
+
+.settings-widget-item {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    background: #1e1f22;
+    border-radius: 6px;
+    padding: 8px 12px;
+    margin-bottom: 6px;
+}
+
+.settings-widget-info {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+}
+
+.settings-widget-info strong {
+    font-size: 14px;
+    color: #dcddde;
+}
+
+.settings-widget-info span {
+    font-size: 12px;
+    color: #72767d;
+}
+
+.settings-widget-remove {
+    width: 24px;
+    height: 24px;
+    background: none;
+    border: none;
+    color: #ed4245;
+    font-size: 18px;
+    cursor: pointer;
+    border-radius: 4px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.settings-widget-remove:hover {
+    background: rgba(237, 66, 69, 0.2);
+}
+
+.settings-widget-form {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.settings-widget-form input {
+    width: 100%;
+    background: #202225;
+    border: 1px solid #202225;
+    border-radius: 4px;
+    padding: 8px 10px;
+    color: #dcddde;
+    font-size: 13px;
+}
+
+.settings-widget-form input:focus {
+    border-color: #5865f2;
+    outline: none;
+}
+
+.settings-btn {
+    padding: 10px 24px;
+    border: none;
+    border-radius: 4px;
+    font-size: 14px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.settings-btn-small {
+    padding: 6px 16px;
+    font-size: 13px;
+}
+
 .settings-btn-save {
-    background: var(--discord-blurple);
+    background: #5865f2;
     color: #fff;
 }
 
 .settings-btn-save:hover {
-    background: var(--discord-blurple-hover);
+    background: #4752c4;
 }
 
-.settings-btn-save:disabled {
-    opacity: 0.6;
-    cursor: not-allowed;
+.settings-btn-cancel {
+    background: #40444b;
+    color: #dcddde;
 }
 
-/* ====================================================================
- * TYPING INDICATOR
- * ==================================================================== */
-
-.typing-indicator {
-    padding: 0 16px 6px;
-    min-height: 22px;
-    animation: typingFadeIn 0.2s ease;
+.settings-btn-cancel:hover {
+    background: #4e5259;
 }
 
-.typing-indicator-text {
-    font-size: 12px;
-    font-weight: 600;
-    color: var(--discord-text-muted);
+.settings-empty {
+    font-size: 13px;
+    color: #72767d;
+    padding: 8px 0;
     font-style: italic;
 }
 
-@keyframes typingFadeIn {
-    from { opacity: 0; transform: translateY(4px); }
-    to { opacity: 1; transform: translateY(0); }
-}
-
-/* ====================================================================
- * MESSAGE CONTEXT MENU
- * ==================================================================== */
-
-.message-context-menu {
-    position: fixed;
-    z-index: 10001;
-    min-width: 188px;
-    background: var(--discord-elevated);
+.settings-error {
+    color: #ed4245;
+    font-size: 13px;
+    margin-top: 8px;
+    padding: 8px;
+    background: rgba(237, 66, 69, 0.1);
     border-radius: 4px;
-    padding: 6px;
-    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.4);
-    animation: contextMenuIn 0.12s ease;
 }
 
-@keyframes contextMenuIn {
-    from { opacity: 0; transform: scale(0.95); }
-    to { opacity: 1; transform: scale(1); }
+.settings-modal-footer {
+    padding: 16px 24px;
+    border-top: 1px solid #202225;
+    display: flex;
+    justify-content: flex-end;
+    gap: 8px;
 }
 
-.context-menu-item {
-    display: block;
-    width: 100%;
-    padding: 8px 12px;
-    background: none;
-    border: none;
-    border-radius: 3px;
-    color: var(--discord-text-normal);
-    font-size: 14px;
-    text-align: left;
-    cursor: pointer;
-    transition: background-color 0.1s, color 0.1s;
+/* Profile Preview in Settings */
+.settings-profile-preview {
+    margin-top: 8px;
 }
 
-.context-menu-item:hover {
-    background: var(--discord-blurple);
+.preview-card {
+    background: #111214;
+    border-radius: 10px;
+    overflow: hidden;
+    max-width: 280px;
+    margin: 0 auto;
+    --preview-primary: #5865f2;
+    --preview-accent: #3ba55d;
+}
+
+.preview-banner {
+    height: 80px;
+    background: linear-gradient(135deg, var(--preview-primary), #1e1f23);
+    background-size: cover;
+    background-position: center;
+    display: none;
+}
+
+.preview-avatar-row {
+    display: flex;
+    align-items: flex-end;
+    padding: 0 16px;
+    margin-top: -32px;
+    gap: 12px;
+}
+
+.preview-avatar-decoration {
+    width: 64px;
+    height: 64px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+}
+
+.preview-avatar {
+    width: 60px;
+    height: 60px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, var(--preview-primary), #5865f2);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 24px;
+    font-weight: 600;
+    color: #fff;
+    border: 3px solid #111214;
+}
+
+.preview-badges {
+    display: flex;
+    gap: 4px;
+    margin-bottom: 4px;
+}
+
+.preview-badge {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 22px;
+    height: 22px;
+    border-radius: 50%;
+    font-size: 10px;
+    font-weight: 700;
+    color: #fff;
+    cursor: help;
+}
+
+.preview-info {
+    padding: 12px 16px 16px;
+}
+
+.preview-name {
+    font-size: 16px;
+    font-weight: 700;
     color: #fff;
 }
 
-.context-menu-item-danger:hover {
-    background: var(--discord-danger);
+.preview-username {
+    font-size: 12px;
+    color: #b9bbbe;
+    margin-top: 2px;
+}
+
+.preview-about {
+    font-size: 13px;
+    color: #dcddde;
+    margin-top: 8px;
+    line-height: 1.4;
+}
+
+/* ====================================================================
+ * GROUP CHAT CREATOR MODAL
+ * ==================================================================== */
+
+.group-creator-modal {
+    background: #2f3136;
+    border-radius: 12px;
+    width: 400px;
+    max-width: 90vw;
+    max-height: 80vh;
+    display: flex;
+    flex-direction: column;
+    box-shadow: 0 8px 40px rgba(0, 0, 0, 0.5);
+}
+
+.group-creator-header {
+    padding: 16px 20px 12px;
+    border-bottom: 1px solid #202225;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.group-creator-header h2 {
+    font-size: 16px;
+    font-weight: 700;
+    color: #fff;
+}
+
+.group-creator-body {
+    padding: 12px 20px;
+    overflow-y: auto;
+    flex: 1;
+}
+
+.group-creator-name-input {
+    width: 100%;
+    background: #202225;
+    border: 1px solid #202225;
+    border-radius: 4px;
+    padding: 10px 12px;
+    color: #dcddde;
+    font-size: 14px;
+    margin-bottom: 12px;
+    outline: none;
+    transition: border-color 0.2s;
+}
+
+.group-creator-name-input:focus {
+    border-color: #5865f2;
+}
+
+.group-creator-list {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+}
+
+.group-creator-friend {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 8px 10px;
+    border-radius: 6px;
+    cursor: pointer;
+    transition: background 0.15s;
+}
+
+.group-creator-friend:hover {
+    background: #36393f;
+}
+
+.group-creator-friend input[type="checkbox"] {
+    accent-color: #5865f2;
+    width: 18px;
+    height: 18px;
+    cursor: pointer;
+    flex-shrink: 0;
+}
+
+.group-creator-avatar {
+    width: 36px;
+    height: 36px;
+    border-radius: 50%;
+    background: #5865f2;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: 600;
+    color: #fff;
+    font-size: 14px;
+    flex-shrink: 0;
+}
+
+.group-creator-friend span {
+    font-size: 14px;
+    color: #dcddde;
+    font-weight: 500;
+}
+
+.group-creator-empty {
+    text-align: center;
+    color: #72767d;
+    padding: 24px;
+    font-size: 14px;
+}
+
+.group-creator-footer {
+    padding: 12px 20px;
+    border-top: 1px solid #202225;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+}
+
+.group-creator-count {
+    font-size: 13px;
+    color: #b9bbbe;
+}
+
+.group-creator-actions {
+    display: flex;
+    gap: 8px;
+}
+
+/* ====================================================================
+ * GROUP CHAT HEADER
+ * ==================================================================== */
+
+.group-header-info {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+}
+
+.group-member-count {
+    font-size: 12px;
+    color: #b9bbbe;
+}
+
+.group-avatar {
+    background: linear-gradient(135deg, #5865f2 0%, #9b59b6 100%) !important;
+}
+
+.dm-channel.group-channel {
+    border-left: 3px solid transparent;
+    transition: all 0.15s ease;
+}
+
+.dm-channel.group-channel:hover {
+    border-left-color: #5865f2;
+}
+
+.add-participants-btn {
+    background: rgba(88, 101, 242, 0.1) !important;
+}
+
+.add-participants-btn:hover {
+    background: rgba(88, 101, 242, 0.3) !important;
+    color: #5865f2 !important;
+}
+
+/* Media button */
+.media-btn {
+    background: none;
+    border: none;
+    color: #b9bbbe;
+    cursor: pointer;
+    font-size: 18px;
+    padding: 10px 6px;
+    transition: color 0.15s;
+    font-weight: 700;
+}
+
+.media-btn:hover {
+    color: #dcddde;
+}
+
+/* Lightbox */
+.lightbox-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(0, 0, 0, 0.9);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 9000;
+    backdrop-filter: blur(8px);
+}
+
+.lightbox-overlay.hidden {
+    display: none;
+}
+
+.lightbox-image {
+    max-width: 90vw;
+    max-height: 90vh;
+    object-fit: contain;
+    border-radius: 4px;
+}
+
+.lightbox-close {
+    position: absolute;
+    top: 20px;
+    right: 24px;
+    background: none;
+    border: none;
+    color: #fff;
+    font-size: 32px;
+    cursor: pointer;
+    opacity: 0.7;
+    transition: opacity 0.2s;
+}
+
+.lightbox-close:hover {
+    opacity: 1;
+}
+
+/* Chat image */
+.chat-image {
+    max-width: 400px;
+    max-height: 300px;
+    border-radius: 8px;
+    cursor: pointer;
+    transition: opacity 0.2s;
+}
+
+.chat-image:hover {
+    opacity: 0.9;
+}
+
+.chat-video {
+    max-width: 400px;
+    max-height: 300px;
+    border-radius: 8px;
+}
+
+/* DM empty state */
+.dm-empty {
+    padding: 16px;
+    text-align: center;
+    color: #72767d;
+    font-size: 13px;
 }

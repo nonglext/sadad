@@ -15,24 +15,10 @@ function initializeDatabase() {
                 email TEXT UNIQUE NOT NULL,
                 password TEXT NOT NULL,
                 avatar TEXT,
-                displayName TEXT DEFAULT '',
-                aboutMe TEXT DEFAULT '',
                 status TEXT DEFAULT 'Online',
                 created_at DATETIME DEFAULT CURRENT_TIMESTAMP
             )
         `);
-        
-        // Add columns if not exist (migration)
-        db.run(`ALTER TABLE users ADD COLUMN displayName TEXT DEFAULT ''`, (err) => {
-            if (err && !err.message.includes('duplicate column')) {
-                console.error('Migration error (displayName):', err.message);
-            }
-        });
-        db.run(`ALTER TABLE users ADD COLUMN aboutMe TEXT DEFAULT ''`, (err) => {
-            if (err && !err.message.includes('duplicate column')) {
-                console.error('Migration error (aboutMe):', err.message);
-            }
-        });
 
         // Servers table
         db.run(`
@@ -170,7 +156,7 @@ const userDB = {
 
     findById: (id) => {
         return new Promise((resolve, reject) => {
-            const sql = 'SELECT id, username, email, avatar, displayName, aboutMe, status FROM users WHERE id = ?';
+            const sql = 'SELECT id, username, email, avatar, status FROM users WHERE id = ?';
             db.get(sql, [id], (err, row) => {
                 if (err) reject(err);
                 else resolve(row);
@@ -188,19 +174,19 @@ const userDB = {
         });
     },
 
-    updateProfile: (id, { username, status, avatar, displayName, aboutMe }) => {
+    updateProfile: (id, { username, status, avatar }) => {
         return new Promise((resolve, reject) => {
-            const sql = 'UPDATE users SET username = ?, status = ?, avatar = ?, displayName = ?, aboutMe = ? WHERE id = ?';
-            db.run(sql, [username, status, avatar, displayName || '', aboutMe || '', id], function(err) {
+            const sql = 'UPDATE users SET username = ?, status = ?, avatar = ? WHERE id = ?';
+            db.run(sql, [username, status, avatar, id], function(err) {
                 if (err) reject(err);
-                else resolve({ id, username, status, avatar, displayName, aboutMe });
+                else resolve({ id, username, status, avatar });
             });
         });
     },
 
     getAll: () => {
         return new Promise((resolve, reject) => {
-            const sql = 'SELECT id, username, email, avatar, displayName, aboutMe, status FROM users';
+            const sql = 'SELECT id, username, email, avatar, status FROM users';
             db.all(sql, [], (err, rows) => {
                 if (err) reject(err);
                 else resolve(rows);

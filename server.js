@@ -122,7 +122,9 @@ app.post('/api/register', async (req, res) => {
                 id: user.id,
                 username: user.username,
                 email: user.email,
-                avatar: username.charAt(0).toUpperCase()
+                avatar: username.charAt(0).toUpperCase(),
+                displayName: '',
+                aboutMe: ''
             }
         });
     } catch (error) {
@@ -158,7 +160,9 @@ app.post('/api/login', async (req, res) => {
                 id: user.id,
                 username: user.username,
                 email: user.email,
-                avatar: user.avatar || user.username.charAt(0).toUpperCase()
+                avatar: user.avatar || user.username.charAt(0).toUpperCase(),
+                displayName: user.displayName || '',
+                aboutMe: user.aboutMe || ''
             }
         });
     } catch (error) {
@@ -180,7 +184,7 @@ app.get('/api/user/profile', authenticateToken, async (req, res) => {
 // Update user profile
 app.patch('/api/user/profile', authenticateToken, async (req, res) => {
     try {
-        const { username, status, avatar } = req.body;
+        const { username, status, avatar, displayName, aboutMe } = req.body;
         const allowedStatuses = ['Online', 'Idle', 'DND', 'Invisible'];
 
         if (!username || username.trim().length < 2) {
@@ -200,6 +204,8 @@ app.patch('/api/user/profile', authenticateToken, async (req, res) => {
             username: username.trim(),
             status: status || currentUser.status || 'Online',
             avatar: avatar?.trim() || currentUser.avatar || null,
+            displayName: displayName !== undefined ? displayName : (currentUser.displayName || ''),
+            aboutMe: aboutMe !== undefined ? aboutMe : (currentUser.aboutMe || ''),
         });
 
         const user = await userDB.findById(req.user.id);

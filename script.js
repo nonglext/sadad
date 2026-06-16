@@ -26,12 +26,13 @@ const appState = {
   token: null,
 
   // UI State
-  view: 'friends', // 'friends', 'dm', 'server'
+  view: 'friends', // 'friends', 'dm', 'server', 'group'
   
   // Navigation
   currentServerId: null,
   currentChannelId: null,
   currentDMUserId: null,
+  currentGroupId: null,
   currentChannelName: null,
 
   // Data (Dynamic - no hardcoded channels)
@@ -39,6 +40,7 @@ const appState = {
   channels: {}, // { [channelId]: { id, name, messages: [] } }
   friends: [],
   pendingRequests: [],
+  groupChats: [], // [{ id, name, icon, members: [], createdBy, createdAt }]
   messages: [], // Current view messages
 
   // Call State
@@ -66,6 +68,7 @@ const appState = {
     messages: false,
     servers: false,
     pendingRequests: false,
+    groupChats: false,
   },
 
   // Event Emitters for internal communication
@@ -74,6 +77,45 @@ const appState = {
     'message-added': [],
     'friend-status-updated': [],
     'call-ended': [],
+  },
+
+  // ---- PROFILE SYSTEM ----
+  // Badges (Nitro-style)
+  badges: [
+    // predefined system badges
+    { id: 'nitro', name: 'Nitro', icon: 'nitro-badge', description: 'Discord Nitro Subscriber' },
+    { id: 'nitro-classic', name: 'Nitro Classic', icon: 'nitro-classic-badge', description: 'Nitro Classic' },
+    { id: 'booster', name: 'Server Booster', icon: 'booster-badge', description: 'Server Boosting' },
+    { id: 'developer', name: 'Developer', icon: 'dev-badge', description: 'Active Developer' },
+    { id: 'moderator', name: 'Moderator', icon: 'mod-badge', description: 'Discord Moderator' },
+    { id: 'verified', name: 'Verified', icon: 'verified-badge', description: 'Verified User' },
+    { id: 'early', name: 'Early Supporter', icon: 'early-badge', description: 'Early Supporter' },
+  ],
+  // User's earned badges
+  userBadges: [], // [{ badgeId, earnedAt }]
+
+  // Avatar decoration
+  avatarDecoration: null, // { type, color, url }
+
+  // Nameplate style
+  nameplate: { style: 'default', color: null },
+
+  // Profile banner
+  profileBanner: null, // URL string
+
+  // Profile theme
+  profileTheme: {
+    primaryColor: '#5865f2',
+    accentColor: '#3ba55d',
+  },
+
+  // Profile Widgets
+  profileWidgets: [], // [{ id, type: 'game', title, description, icon, url }]
+  
+  // Group DM state
+  groupCreation: {
+    selectedFriends: [], // Array of friend IDs
+    groupName: '',
   },
 
   /**
@@ -261,6 +303,9 @@ async function initializeApp() {
 
     await loadModule('contextMenu.js');
     ContextMenuModule.init();
+
+    await loadModule('profile.js');
+    ProfileModule.init({ appState, fetchWithError, socketEmitSafe });
 
     // 5. Load data from server
     await loadUserServers();
@@ -1076,8 +1121,16 @@ function populateDMList(friends) {
   
   friends.forEach(friend => {
     const div = document.createElement('div');
-    div.className = 'channel';
-    div.innerHTML = `<span>${friend.username}</span>`;
+    div.className = 'channel dm-channel';
+    const avatarLetter = (friend.avatar && !friend.avatar.startsWith('http')) ? friend.avatar : friend.username.charAt(0).toUpperCase();
+    let avatarStyle = '';
+    if (friend.avatar && friend.avatar.startsWith('http')) {
+      avatarStyle = `style="background-image: url('${friend.avatar}'); background-size: cover; color: transparent;"`;
+    }
+    div.innerHTML = `
+      <div class="dm-avatar" ${avatarStyle}>${avatarLetter}</div>
+      <span class="dm-name">${friend.username}</span>
+    `;
     div.addEventListener('click', () => startDM(friend.id, friend.username));
     dmList.appendChild(div);
   });
@@ -1089,6 +1142,7 @@ function startDM(friendId, friendUsername) {
     currentDMUserId: friendId,
     currentServerId: null,
     currentChannelId: null,
+    currentGroupId: null,
     messages: []
   });
 
@@ -1424,11 +1478,38 @@ function addMessageToUI(rawMessage) {
   header.appendChild(timestamp);
   content.appendChild(header);
   
-  // Message text
-  const text = document.createElement('div');
-  text.className = 'message-text';
-  text.textContent = message.text;
-  content.appendChild(text);
+  // Message text - detect image markdown ![alt](url) and render as img
+  const textContainer = document.createElement('div');
+  textContainer.className = 'message-text';
+  
+  const imgMatch = message.text && message.text.match(/^!\[.*?\]\((.*?)\)$/);
+  const videoMatch = message.text && message.text.match(/^\[video\]\((.*?)\)$/);
+  
+  if (imgMatch) {
+    const img = document.createElement('img');
+    img.src = imgMatch[1];
+    img.className = 'chat-image';
+    img.alt = 'Image';
+    img.loading = 'lazy';
+    img.addEventListener('click', (e) => {
+      e.stopPropagation();
+      if (typeof openLightbox === 'function') {
+        openLightbox(imgMatch[1]);
+      }
+    });
+    textContainer.appendChild(img);
+  } else if (videoMatch) {
+    const video = document.createElement('video');
+    video.src = videoMatch[1];
+    video.className = 'chat-video';
+    video.controls = true;
+    video.preload = 'metadata';
+    textContainer.appendChild(video);
+  } else {
+    textContainer.textContent = message.text;
+  }
+  
+  content.appendChild(textContainer);
   
   // Reactions container (only show if reactions exist)
   const reactionsContainer = document.createElement('div');
@@ -2081,12 +2162,12 @@ async function initializeMedia() {
         height: { ideal: 720 }
       },
       audio: {
-        echoCancellation: true,
-        noiseSuppression: true,
-        autoGainControl: true,
+        echoCancellation: false,
+        noiseSuppression: false,
+        autoGainControl: false,
         sampleRate: 48000,
         sampleSize: 16,
-        channelCount: 1
+        channelCount: 2
       }
     };
     
@@ -2246,4 +2327,543 @@ function initializeDraggableCallWindow() {
   });
 }
 
-console.log('[App] Script loaded successfully - Production Ready!');
+/**
+ * ====================================================================
+ * LIGHTBOX FOR IMAGE FULL-SCREEN VIEW
+ * ====================================================================
+ */
+let lightboxOverlay = null;
+
+function initializeLightbox() {
+  lightboxOverlay = document.getElementById('lightboxOverlay');
+  if (!lightboxOverlay) return;
+  
+  lightboxOverlay.querySelector('.lightbox-close').addEventListener('click', closeLightbox);
+  lightboxOverlay.addEventListener('click', (e) => {
+    if (e.target === lightboxOverlay) closeLightbox();
+  });
+  document.addEventListener('keydown', (e) => {
+    if (e.key === 'Escape') closeLightbox();
+  });
+}
+
+function openLightbox(src) {
+  if (!lightboxOverlay) return;
+  const img = lightboxOverlay.querySelector('.lightbox-image');
+  img.src = src;
+  lightboxOverlay.classList.remove('hidden');
+}
+
+function closeLightbox() {
+  if (!lightboxOverlay) return;
+  lightboxOverlay.classList.add('hidden');
+  const img = lightboxOverlay.querySelector('.lightbox-image');
+  img.src = '';
+}
+
+/**
+ * ====================================================================
+ * MEDIA UPLOAD "+" BUTTON (separate from attach - opens file picker for images)
+ * ====================================================================
+ */
+function initializeMediaUpload() {
+  const mediaBtn = document.getElementById('mediaUploadBtn');
+  if (!mediaBtn) return;
+  
+  const fileInput = document.createElement('input');
+  fileInput.type = 'file';
+  fileInput.accept = 'image/*,video/mp4,video/webm';
+  fileInput.style.display = 'none';
+  document.body.appendChild(fileInput);
+  
+  mediaBtn.addEventListener('click', (e) => {
+    e.stopPropagation();
+    fileInput.click();
+  });
+  
+  fileInput.addEventListener('change', async (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+    
+    const isImage = file.type.startsWith('image/');
+    const isVideo = file.type.startsWith('video/');
+    
+    if (isImage || isVideo) {
+      // Upload via existing upload mechanism but include type info
+      try {
+        const formData = new FormData();
+        formData.append('file', file);
+        formData.append('channelId', appState.currentChannelId || appState.currentDMUserId);
+        
+        const response = await fetch('/api/upload', {
+          method: 'POST',
+          headers: {
+            'Authorization': `Bearer ${appState.token}`
+          },
+          body: formData
+        });
+        
+        if (!response.ok) throw new Error('Upload failed');
+        const fileData = await response.json();
+        
+        // Send as media message with markdown-like syntax for detection
+        const message = {
+          text: isImage 
+            ? `![${file.name}](${fileData.url})` 
+            : `[video](${fileData.url})`,
+          file: fileData,
+          mediaType: isImage ? 'image' : 'video'
+        };
+        
+        if (appState.view === 'dm' && appState.currentDMUserId) {
+          socketEmitSafe('send-dm', { receiverId: appState.currentDMUserId, message });
+        } else if (appState.view === 'server') {
+          socketEmitSafe('send-message', { channelId: appState.currentChannelId, message });
+        }
+      } catch (error) {
+        console.error('[Media Upload] Error:', error);
+        alert('Failed to upload media');
+      }
+    }
+    
+    fileInput.value = '';
+  });
+}
+
+/**
+ * ====================================================================
+ * OPTIMISTIC UI FOR REACTIONS WITH ROLLBACK
+ * ====================================================================
+ */
+function addReactionOptimistic(messageId, emoji) {
+  if (!appState.socketConnected) return;
+  
+  // Store previous state for rollback
+  const reactionsContainer = document.querySelector(`[data-message-id="${messageId}"] .message-reactions`);
+  const previousHTML = reactionsContainer ? reactionsContainer.innerHTML : '';
+  const previousDisplay = reactionsContainer ? reactionsContainer.style.display : '';
+  
+  // Optimistic update: add reaction immediately in DOM
+  if (reactionsContainer) {
+    // Check if this emoji already exists
+    const existing = reactionsContainer.querySelector(`.reaction[data-emoji="${emoji}"]`);
+    if (existing) {
+      const countSpan = existing.querySelector('span');
+      const count = parseInt(countSpan.textContent) + 1;
+      countSpan.textContent = count;
+    } else {
+      const reactionEl = document.createElement('div');
+      reactionEl.className = 'reaction';
+      reactionEl.setAttribute('data-emoji', emoji);
+      reactionEl.innerHTML = `${emoji} <span>1</span>`;
+      reactionEl.title = appState.user?.username || 'You';
+      reactionEl.addEventListener('click', () => {
+        // Remove reaction on click
+        socketEmitSafe('remove-reaction', { messageId, emoji });
+      });
+      reactionsContainer.appendChild(reactionEl);
+      reactionsContainer.style.display = 'flex';
+    }
+  }
+  
+  // Send to server
+  socketEmitSafe('add-reaction', { messageId, emoji }, (response) => {
+    // If server returns error, rollback
+    if (response && response.error) {
+      console.warn('[Reaction] Server error, rolling back:', response.error);
+      if (reactionsContainer) {
+        reactionsContainer.innerHTML = previousHTML;
+        reactionsContainer.style.display = previousDisplay || 'none';
+      }
+    }
+  });
+}
+
+/**
+ * ====================================================================
+ * GROUP DM / GROUP CHAT SYSTEM
+ * ====================================================================
+ */
+
+/**
+ * Open group creation modal with friend checklist.
+ */
+function openGroupCreatorModal() {
+  // Remove existing modal if any
+  const existing = document.getElementById('groupCreatorOverlay');
+  if (existing) existing.remove();
+
+  const overlay = document.createElement('div');
+  overlay.id = 'groupCreatorOverlay';
+  overlay.className = 'profile-modal-overlay';
+  overlay.setAttribute('aria-hidden', 'true');
+
+  const friends = appState.friends || [];
+  let friendsHTML = '';
+  if (friends.length === 0) {
+    friendsHTML = '<div class="group-creator-empty">No friends to add. Add friends first!</div>';
+  } else {
+    friends.forEach(f => {
+      friendsHTML += `
+        <label class="group-creator-friend">
+          <input type="checkbox" value="${f.id}" data-username="${f.username}" />
+          <div class="group-creator-avatar">${f.avatar || f.username.charAt(0).toUpperCase()}</div>
+          <span>${f.username}</span>
+        </label>
+      `;
+    });
+  }
+
+  overlay.innerHTML = `
+    <div class="group-creator-modal">
+      <div class="group-creator-header">
+        <h2>
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor" style="vertical-align:middle;margin-right:8px;"><path d="M15 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm-9-2V7H4v3H1v2h3v3h2v-3h3v-2H6zm9 4c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/></svg>
+          Select Friends for Group
+        </h2>
+        <button type="button" class="profile-modal-close group-creator-close">&times;</button>
+      </div>
+      <div class="group-creator-body">
+        <input type="text" class="group-creator-name-input" id="groupNameInput" placeholder="Group name (optional)" maxlength="32" />
+        <div class="group-creator-list">
+          ${friendsHTML}
+        </div>
+      </div>
+      <div class="group-creator-footer">
+        <span class="group-creator-count" id="groupSelectedCount">0 selected</span>
+        <div class="group-creator-actions">
+          <button type="button" class="settings-btn settings-btn-cancel group-creator-cancel">Cancel</button>
+          <button type="button" class="settings-btn settings-btn-save" id="confirmGroupCreateBtn">Create Group</button>
+        </div>
+      </div>
+    </div>
+  `;
+
+  document.body.appendChild(overlay);
+
+  // Update selected count
+  const checkboxes = overlay.querySelectorAll('input[type="checkbox"]');
+  const countEl = document.getElementById('groupSelectedCount');
+  checkboxes.forEach(cb => {
+    cb.addEventListener('change', () => {
+      const checked = overlay.querySelectorAll('input[type="checkbox"]:checked').length;
+      countEl.textContent = checked + ' selected';
+    });
+  });
+
+  // Close handlers
+  overlay.querySelector('.group-creator-close').addEventListener('click', () => overlay.remove());
+  overlay.querySelector('.group-creator-cancel').addEventListener('click', () => overlay.remove());
+  overlay.addEventListener('click', (e) => {
+    if (e.target === overlay) overlay.remove();
+  });
+
+  // Create group handler
+  document.getElementById('confirmGroupCreateBtn').addEventListener('click', () => createGroupChat(overlay));
+  
+  overlay.classList.add('visible');
+}
+
+/**
+ * Create a group chat from selected friends.
+ * @param {HTMLElement} overlay - The group creator modal overlay
+ */
+function createGroupChat(overlay) {
+  const checkboxes = overlay.querySelectorAll('input[type="checkbox"]:checked');
+  const selectedFriendIds = Array.from(checkboxes).map(cb => cb.value);
+  const selectedNames = Array.from(checkboxes).map(cb => cb.getAttribute('data-username'));
+
+  if (selectedFriendIds.length < 1) {
+    alert('Please select at least 1 friend to create a group.');
+    return;
+  }
+
+  const groupNameInput = document.getElementById('groupNameInput');
+  const groupName = groupNameInput.value.trim() || selectedNames.join(', ');
+
+  // Create group object locally
+  const groupId = 'group_' + Date.now();
+
+  // Build members list (creator + selected friends)
+  const members = [
+    { id: appState.user.id, username: appState.user.username, isOwner: true },
+    ...selectedFriendIds.map((id, idx) => ({
+      id,
+      username: selectedNames[idx] || 'Unknown',
+      isOwner: false,
+    }))
+  ];
+
+  const newGroup = {
+    id: groupId,
+    name: groupName,
+    icon: groupName.charAt(0).toUpperCase(),
+    members,
+    createdBy: appState.user.id,
+    createdAt: new Date().toISOString(),
+  };
+
+  // Add to state
+  appState.groupChats.push(newGroup);
+  appState.update({ groupChats: [...appState.groupChats] });
+
+  // Close modal
+  overlay.remove();
+
+  // Open the group chat
+  openGroupChat(groupId, newGroup);
+}
+
+/**
+ * Open a group chat view.
+ * @param {string} groupId
+ * @param {object} groupData
+ */
+function openGroupChat(groupId, groupData) {
+  appState.update({
+    view: 'group',
+    currentGroupId: groupId,
+    currentDMUserId: null,
+    currentServerId: null,
+    currentChannelId: null,
+    messages: [],
+  });
+
+  document.getElementById('friendsView').style.display = 'none';
+  document.getElementById('chatView').style.display = 'flex';
+  document.getElementById('channelsView').style.display = 'none';
+  document.getElementById('dmListView').style.display = 'block';
+
+  const memberCount = groupData.members ? groupData.members.length : 0;
+  const isOwner = groupData.members?.some(m => String(m.id) === String(appState.user.id) && m.isOwner);
+
+  const chatHeaderInfo = document.getElementById('chatHeaderInfo');
+  chatHeaderInfo.innerHTML = `
+    <div class="dm-header-left">
+      <div class="friend-avatar group-avatar" style="background:linear-gradient(135deg,#5865f2,#9b59b6);">
+        ${groupData.icon || groupData.name.charAt(0).toUpperCase()}
+      </div>
+      <div class="group-header-info">
+        <span class="channel-name">${groupData.name}</span>
+        <span class="group-member-count">${memberCount} members</span>
+      </div>
+    </div>
+    <div class="dm-header-actions">
+      <button class="dm-call-btn audio-call-btn" title="Audio Call">📞</button>
+      <button class="dm-call-btn video-call-btn" title="Video Call">📹</button>
+      ${isOwner ? `
+      <button class="dm-call-btn add-participants-btn" id="addParticipantsBtn" title="Add Members">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor"><path d="M15 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm-9-2V7H4v3H1v2h3v3h2v-3h3v-2H6zm9 4c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/></svg>
+      </button>` : ''}
+    </div>
+  `;
+
+  // Bind actions
+  chatHeaderInfo.querySelector('.audio-call-btn')?.addEventListener('click', () => {
+    if (groupData.members && groupData.members.length > 0) {
+      const firstOther = groupData.members.find(m => String(m.id) !== String(appState.user.id));
+      if (firstOther) initiateCall(firstOther.id, 'audio');
+    }
+  });
+  chatHeaderInfo.querySelector('.video-call-btn')?.addEventListener('click', () => {
+    if (groupData.members && groupData.members.length > 0) {
+      const firstOther = groupData.members.find(m => String(m.id) !== String(appState.user.id));
+      if (firstOther) initiateCall(firstOther.id, 'video');
+    }
+  });
+  chatHeaderInfo.querySelector('#addParticipantsBtn')?.addEventListener('click', () => {
+    openGroupCreatorModal();
+  });
+
+  document.getElementById('messageInput').placeholder = `Message ${groupData.name}`;
+
+  // Update sidebar to show this group
+  updateGroupList();
+
+  // Load group chat messages (stub)
+  loadGroupChatHistory(groupId);
+}
+
+/**
+ * Update group list in the DM sidebar.
+ */
+function updateGroupList() {
+  const dmList = document.getElementById('dmList');
+  if (!dmList) return;
+
+  // Clear existing DM list groups to prevent duplicates on re-render
+  const existingGroups = dmList.querySelectorAll('.group-channel');
+  existingGroups.forEach(el => el.remove());
+
+  const groups = appState.groupChats || [];
+  // Find the "DIRECT MESSAGES" category header
+  const dmCategory = dmList.closest('.channel-category') || document.querySelector('.channel-category .category-header + .dm-list');
+  
+  groups.forEach(group => {
+    // Check if already rendered
+    if (dmList.querySelector(`[data-group-id="${group.id}"]`)) return;
+
+    const div = document.createElement('div');
+    div.className = 'channel dm-channel group-channel';
+    div.setAttribute('data-group-id', group.id);
+    div.innerHTML = `
+      <div class="dm-avatar group-avatar" style="background:linear-gradient(135deg,#5865f2,#9b59b6);">
+        ${group.icon || group.name.charAt(0).toUpperCase()}
+      </div>
+      <span class="dm-name">${group.name}</span>
+    `;
+    div.addEventListener('click', () => openGroupChat(group.id, group));
+    dmList.appendChild(div);
+  });
+}
+
+/**
+ * Load group chat history (placeholder - can connect to API).
+ */
+async function loadGroupChatHistory(groupId) {
+  try {
+    appState.update({ isLoading: { ...appState.isLoading, messages: true } });
+    const messagesContainer = document.getElementById('messagesContainer');
+    messagesContainer.innerHTML = '<div class="loading-spinner"></div>';
+
+    // Try to load from API if available
+    let messages = [];
+    try {
+      messages = await fetchWithError(`/api/groups/${groupId}/messages`);
+    } catch {
+      // API endpoint may not exist yet, that's fine
+      messages = [];
+    }
+
+    appState.update({
+      messages,
+      isLoading: { ...appState.isLoading, messages: false },
+    });
+
+    messagesContainer.innerHTML = '';
+    if (messages.length === 0) {
+      messagesContainer.innerHTML = `
+        <div class="friends-welcome-view" style="display:flex;">
+          <div class="friends-welcome-content" style="text-align:center;color:#72767d;">
+            <h2 style="font-size:24px;color:#fff;margin-bottom:16px;">
+              👋 Welcome to the Group!
+            </h2>
+            <p>Start the conversation.</p>
+          </div>
+        </div>
+      `;
+    } else {
+      messages.forEach(msg => addMessageToUI(msg));
+    }
+    scrollToBottom();
+  } catch (error) {
+    console.error('[Group History] Error:', error);
+    appState.update({ isLoading: { ...appState.isLoading, messages: false } });
+  }
+}
+
+/**
+ * Send a group message via socket.
+ * @param {string} groupId
+ * @param {string} text
+ */
+function sendGroupMessage(groupId, text) {
+  if (!appState.socketConnected) return;
+  socketEmitSafe('send-group-message', {
+    groupId,
+    message: { text },
+    senderId: appState.user.id,
+  });
+}
+
+/**
+ * ====================================================================
+ * AVATAR CLICK HANDLERS FOR PROFILE MODAL
+ * ====================================================================
+ */
+function initializeAvatarClicks() {
+  // Click on friend avatar in friend list
+  document.addEventListener('click', (e) => {
+    const friendAvatar = e.target.closest('.friend-item .friend-avatar');
+    if (friendAvatar) {
+      const friendItem = friendAvatar.closest('.friend-item');
+      const friendId = friendItem?.getAttribute('data-friend-id');
+      if (friendId) {
+        const friend = appState.friends.find(f => String(f.id) === String(friendId));
+        if (friend && typeof ProfileModule !== 'undefined') {
+          ProfileModule.open(friendId, friend);
+          e.stopPropagation();
+        }
+      }
+    }
+  });
+  
+  // Click on user avatar in search results
+  document.addEventListener('click', (e) => {
+    const searchAvatar = e.target.closest('.user-search-item .user-avatar');
+    if (searchAvatar) {
+      const searchItem = searchAvatar.closest('.user-search-item');
+      // Search items don't have data-friend-id, we need to find by username
+      const userName = searchItem?.querySelector('.user-name')?.textContent;
+      if (userName) {
+        const allUsersPromise = fetchWithError('/api/users');
+        allUsersPromise.then(users => {
+          const user = users.find(u => u.username === userName);
+          if (user && typeof ProfileModule !== 'undefined') {
+            ProfileModule.open(user.id, user);
+          }
+        }).catch(() => {});
+      }
+    }
+  });
+  
+  // Click on DM avatar in DM header
+  document.addEventListener('click', (e) => {
+    const dmAvatar = e.target.closest('.dm-header-left .friend-avatar');
+    if (dmAvatar && appState.currentDMUserId) {
+      const friend = appState.friends.find(f => String(f.id) === String(appState.currentDMUserId));
+      if (friend && typeof ProfileModule !== 'undefined') {
+        ProfileModule.open(appState.currentDMUserId, friend);
+      }
+    }
+  });
+
+  // Click on own user avatar in user panel
+  document.addEventListener('click', (e) => {
+    const userPanelAvatar = e.target.closest('.user-panel .user-avatar');
+    if (userPanelAvatar && appState.user && typeof ProfileModule !== 'undefined') {
+      ProfileModule.open(appState.user.id, appState.user);
+    }
+  });
+}
+
+/**
+ * ====================================================================
+ * PATCHES TO EXISTING FUNCTIONS
+ * ====================================================================
+ * Override addMessageToUI to render images
+ * Override addReaction function to use optimistic approach
+ */
+
+// Patch addReaction to use optimistic update
+const originalAddReaction = addReaction;
+function addReaction(messageId, emoji) {
+  addReactionOptimistic(messageId, emoji);
+}
+
+// Patch initializeApp to also init lightbox, media upload, avatar clicks
+const originalInitializeApp = initializeApp;
+// We can't easily override initializeApp since it's async, 
+// so we hook into the init sequence below
+
+// Hook into the initialization
+document.addEventListener('DOMContentLoaded', () => {
+  // After all modules loaded, initialize new features
+  setTimeout(() => {
+    initializeLightbox();
+    initializeMediaUpload();
+    initializeAvatarClicks();
+  }, 1000);
+});
+
+console.log('[App] Script loaded successfully - Advanced Profile & Media System active!');
