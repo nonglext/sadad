@@ -485,33 +485,70 @@ async function connectToSocketIO() {
  */
 
 /**
+ * Normalizes message objects from socket, API, or DM into a unified shape.
+ * Socket: { author, text, avatar, timestamp }
+ * API:    { username, content, avatar, created_at }
+ * @param {Object} raw - Raw message payload
+ * @returns {Object} Normalized message
+ */
+function normalizeMessage(raw) {
+  if (!raw || typeof raw !== 'object') {
+    return {
+      id: Date.now(),
+      author: 'Unknown',
+      avatar: '?',
+      text: '',
+      timestamp: new Date().toISOString(),
+      reactions: [],
+    };
+  }
+
+  const author = raw.author || raw.username || raw.sender_name || 'Unknown';
+  const text = raw.text ?? raw.content ?? '';
+
+  return {
+    id: raw.id ?? Date.now(),
+    author,
+    avatar: raw.avatar || author.charAt(0).toUpperCase(),
+    text,
+    timestamp: raw.timestamp || raw.created_at || new Date().toISOString(),
+    reactions: raw.reactions || [],
+  };
+}
+
+/**
+ * Parses new-message socket payload (nested or flat structure).
+ * @param {Object} data - Socket event data
+ * @returns {{ channelId: string|number, message: Object }}
+ */
+function parseNewMessagePayload(data) {
+  const channelId = data.channelId ?? data.channel_id;
+  const rawMessage = data.message ?? data;
+  return { channelId, message: normalizeMessage(rawMessage) };
+}
+
+/**
  * Handle incoming message with optimized rendering (no full re-render)
  */
 function handleNewMessage(data) {
   try {
-    const { channelId, message } = data;
-    
-    // Only display if current view is the channel where message arrived
-    if (appState.currentView !== 'server' || appState.currentChannelId !== channelId) {
-      // Still store it if we're viewing a server/channel
-      if (channelId in appState.channels) {
-        appState.channels[channelId].messages = appState.channels[channelId].messages || [];
-        appState.channels[channelId].messages.push(message);
-      }
-      return;
-    }
+    const { channelId, message } = parseNewMessagePayload(data);
+    if (!channelId) return;
 
-    // Add message to current messages
-    appState.messages.push(message);
+    const isCurrentChannel =
+      appState.view === 'server' &&
+      String(appState.currentChannelId) === String(channelId);
 
-    // Only add to UI if in current channel
-    if (appState.currentChannelId === channelId && appState.currentView === 'server') {
+    if (isCurrentChannel) {
+      appState.update({ messages: [...appState.messages, message] });
       addMessageToUI(message);
       scrollToBottom();
 
-      // Show notification if app is not focused
-      if (document.hidden && message.author !== appState.user.username) {
-        showNotification('New Message', `${message.author}: ${message.text.substring(0, 50)}`);
+      if (document.hidden && message.author !== appState.user?.username) {
+        const preview = message.text.length > 50
+          ? `${message.text.substring(0, 50)}...`
+          : message.text;
+        showNotification('New Message', `${message.author}: ${preview}`);
       }
     }
 
@@ -602,7 +639,7 @@ async function handleFriendRemoved(data) {
 
 function handleNewDM(data) {
   try {
-    if (data.senderId === appState.currentDMUserId && appState.currentView === 'dm') {
+    if (data.senderId === appState.currentDMUserId && appState.view === 'dm') {
       addMessageToUI({
         id: data.message.id,
         author: data.message.author,
@@ -619,7 +656,7 @@ function handleNewDM(data) {
 
 function handleDMSent(data) {
   try {
-    if (data.receiverId === appState.currentDMUserId && appState.currentView === 'dm') {
+    if (data.receiverId === appState.currentDMUserId && appState.view === 'dm') {
       addMessageToUI({
         id: data.message.id,
         author: appState.user.username,
@@ -1318,18 +1355,20 @@ function sendMessage() {
 /**
  * OPTIMIZED MESSAGE RENDERING - Only add new message, don't re-render all
  */
-function addMessageToUI(message) {
+function addMessageToUI(rawMessage) {
   const messagesContainer = document.getElementById('messagesContainer');
   if (!messagesContainer) return;
+
+  const message = normalizeMessage(rawMessage);
   
   const messageGroup = document.createElement('div');
   messageGroup.className = 'message-group';
-  messageGroup.setAttribute('data-message-id', message.id || Date.now());
+  messageGroup.setAttribute('data-message-id', message.id);
   
   // Avatar
   const avatar = document.createElement('div');
   avatar.className = 'message-avatar';
-  avatar.textContent = message.avatar || 'U';
+  avatar.textContent = message.avatar;
   
   // Content wrapper
   const content = document.createElement('div');
