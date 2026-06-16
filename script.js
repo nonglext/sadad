@@ -197,6 +197,15 @@ function connectToSocketIO() {
             showNotification('New Friend Request', 'You have a new friend request!');
         });
 
+        // Real-time friend list update when friend is accepted
+        socket.on('friend-accepted', () => {
+            loadFriends();
+            if (currentView === 'friends' || currentView === 'dm') {
+                populateDMList(friends.map(f => ({ id: f.id, username: f.username, avatar: f.avatar })));
+            }
+            showNotification('Friend Added', 'A new friend has been added!');
+        });
+
         socket.on('incoming-call', (data) => {
             const { from, type } = data;
             if (from) {
@@ -470,6 +479,11 @@ window.acceptFriendRequest = async function(friendId) {
         if (response.ok) {
             loadPendingRequests();
             loadFriends();
+            
+            // Notify other user in real-time
+            if (socket && socket.connected) {
+                socket.emit('friend-accepted-notify', { to: friendId });
+            }
         }
     } catch (error) {
         console.error('Error accepting friend request:', error);
@@ -696,8 +710,14 @@ window.startDM = async function(friendId, friendUsername) {
 
     const chatHeaderInfo = document.getElementById('chatHeaderInfo');
     chatHeaderInfo.innerHTML = `
-        <div class="friend-avatar">${friendUsername.charAt(0).toUpperCase()}</div>
-        <span class="channel-name">${friendUsername}</span>
+        <div class="dm-header-left">
+            <div class="friend-avatar">${friendUsername.charAt(0).toUpperCase()}</div>
+            <span class="channel-name">${friendUsername}</span>
+        </div>
+        <div class="dm-header-actions">
+            <button class="dm-call-btn audio-call-btn" title="Audio Call" onclick="initiateCall(${friendId}, 'audio')">📞</button>
+            <button class="dm-call-btn video-call-btn" title="Video Call" onclick="initiateCall(${friendId}, 'video')">📹</button>
+        </div>
     `;
     
     document.getElementById('messageInput').placeholder = `Message @${friendUsername}`;
@@ -947,6 +967,11 @@ function addMessageToUI(message) {
     
     const reactionsContainer = document.createElement('div');
     reactionsContainer.className = 'message-reactions';
+    
+    // Only show reactions if they exist
+    if (!message.reactions || message.reactions.length === 0) {
+        reactionsContainer.style.display = 'none';
+    }
     
     const addReactionBtn = document.createElement('button');
     addReactionBtn.className = 'add-reaction-btn';

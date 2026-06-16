@@ -1327,3 +1327,391 @@ body {
 .message-group {
     animation: fadeIn 0.2s ease;
 }
+
+/* ===== DM Header with Call Buttons ===== */
+#chatHeaderInfo {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    width: 100%;
+}
+
+.dm-header-left {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+.dm-header-left .friend-avatar {
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, #5865f2 0%, #7289da 100%);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: 600;
+    color: white;
+    font-size: 16px;
+}
+
+.dm-header-left .channel-name {
+    font-size: 18px;
+    font-weight: 600;
+    color: #ffffff;
+}
+
+.dm-header-actions {
+    display: flex;
+    gap: 8px;
+    align-items: center;
+}
+
+.dm-call-btn {
+    width: 40px;
+    height: 40px;
+    background: none;
+    border: none;
+    border-radius: 8px;
+    font-size: 18px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: #b9bbbe;
+    transition: all 0.2s ease;
+    opacity: 0.8;
+}
+
+.dm-call-btn:hover {
+    background-color: rgba(88, 101, 242, 0.2);
+    color: #5865f2;
+    opacity: 1;
+    transform: scale(1.08);
+}
+
+.dm-call-btn:active {
+    transform: scale(0.95);
+}
+
+.dm-call-btn.audio-call-btn {
+    background-color: rgba(88, 101, 242, 0.1);
+}
+
+.dm-call-btn.audio-call-btn:hover {
+    background-color: rgba(88, 101, 242, 0.2);
+}
+
+.dm-call-btn.video-call-btn {
+    background-color: rgba(88, 101, 242, 0.1);
+}
+
+.dm-call-btn.video-call-btn:hover {
+    background-color: rgba(88, 101, 242, 0.2);
+}
+
+/* ===== Enhanced Message Reactions ===== */
+.message-reactions {
+    display: flex;
+    gap: 6px;
+    margin-top: 8px;
+    flex-wrap: wrap;
+}
+
+.message-reactions:empty {
+    display: none;
+}
+
+.reaction {
+    background: linear-gradient(135deg, #2f3136 0%, #36393f 100%);
+    border: 1px solid #40444b;
+    border-radius: 12px;
+    padding: 4px 10px;
+    font-size: 14px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    transition: all 0.15s ease;
+    user-select: none;
+}
+
+.reaction:hover {
+    background: linear-gradient(135deg, #36393f 0%, #3c3f45 100%);
+    border-color: #5865f2;
+    transform: translateY(-2px);
+}
+
+.reaction span {
+    font-size: 11px;
+    color: #8e9297;
+    font-weight: 500;
+}
+
+.reaction:hover span {
+    color: #b9bbbe;
+}
+
+.add-reaction-btn {
+    background: none;
+    border: none;
+    font-size: 16px;
+    cursor: pointer;
+    padding: 6px 10px;
+    border-radius: 8px;
+    transition: all 0.15s ease;
+    margin-top: 8px;
+    opacity: 0.6;
+    color: #b9bbbe;
+}
+
+.add-reaction-btn:hover {
+    background-color: rgba(88, 101, 242, 0.1);
+    opacity: 1;
+    color: #5865f2;
+}
+
+/* ===== Smooth Global Transitions ===== */
+* {
+    transition: background-color 0.2s ease, color 0.2s ease, border-color 0.2s ease;
+}
+
+/* Override transitions for specific elements to avoid lag */
+input, textarea, video, .call-interface, .incoming-call {
+    transition: none;
+}
+
+/* Button smooth interactions */
+button {
+    transition: all 0.15s ease;
+}
+
+button:active {
+    transform: scale(0.98);
+}
+
+/* Text input smooth focus */
+input[type="text"],
+input[type="email"],
+input[type="password"],
+textarea,
+#messageInput {
+    transition: border-color 0.2s ease, box-shadow 0.2s ease, background-color 0.2s ease;
+}
+
+input[type="text"]:focus,
+input[type="email"]:focus,
+input[type="password"]:focus,
+textarea:focus,
+#messageInput:focus {
+    border-color: #5865f2;
+    box-shadow: 0 0 0 3px rgba(88, 101, 242, 0.1);
+}
+
+/* Enhanced Channel Hover */
+.channel {
+    transition: all 0.15s ease;
+}
+
+.channel:hover {
+    background-color: #3c3f45;
+    padding-left: 12px;
+}
+
+/* Enhanced Friend Item Hover */
+.friend-item {
+    transition: all 0.2s ease;
+}
+
+.friend-item:hover {
+    background-color: #36393f;
+    transform: translateX(2px);
+}
+
+/* Smooth Server Icon Animation */
+.server-icon {
+    transition: all 0.2s ease;
+}
+
+.server-icon:hover {
+    transition: all 0.1s ease;
+}
+
+/* Control Button Group Spacing */
+.user-controls {
+    gap: 12px;
+}
+
+.control-btn {
+    transition: all 0.2s ease;
+    min-width: 32px;
+}
+
+.control-btn:active {
+    transform: scale(0.92);
+}
+
+/* Participant Video Smooth Transitions */
+.participant {
+    transition: all 0.3s ease;
+}
+
+.participant video {
+    transition: opacity 0.3s ease;
+}
+
+/* Minimize/Maximize Animation */
+.participant.minimized {
+    animation: minimizeVideo 0.3s ease;
+}
+
+.participant.maximized {
+    animation: maximizeVideo 0.3s ease;
+}
+
+@keyframes minimizeVideo {
+    0% {
+        width: auto;
+        height: auto;
+    }
+    100% {
+        width: 120px;
+        height: 90px;
+    }
+}
+
+@keyframes maximizeVideo {
+    0% {
+        width: auto;
+        height: auto;
+    }
+    100% {
+        width: 90vw;
+        height: 90vh;
+    }
+}
+
+/* Call Control Button Animation */
+.call-control-btn {
+    transition: all 0.2s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+.call-control-btn:hover {
+    animation: controlButtonPulse 0.3s ease;
+}
+
+@keyframes controlButtonPulse {
+    0% {
+        transform: scale(1);
+    }
+    50% {
+        transform: scale(1.15);
+    }
+    100% {
+        transform: scale(1.1);
+    }
+}
+
+/* Message Group Better Hover */
+.message-group {
+    transition: background-color 0.15s ease;
+}
+
+.message-group:hover .add-reaction-btn {
+    opacity: 1;
+}
+
+/* Header Gradient Smooth */
+.chat-header, .call-header {
+    transition: background 0.3s ease;
+}
+
+/* User Panel Shadow on Hover */
+.user-panel {
+    transition: box-shadow 0.2s ease;
+}
+
+.user-panel:hover {
+    box-shadow: 0 -2px 8px rgba(0, 0, 0, 0.3);
+}
+
+/* Avatar Gradient Animation on Hover */
+.friend-avatar, .user-avatar, .message-avatar {
+    transition: all 0.2s ease;
+}
+
+.friend-item:hover .friend-avatar,
+.user-search-item:hover .user-avatar {
+    transform: scale(1.05);
+}
+
+/* Emoji Picker Entrance */
+.emoji-picker {
+    animation: slideInUp 0.2s ease;
+}
+
+.emoji-option {
+    transition: all 0.1s ease;
+}
+
+.emoji-option:hover {
+    transform: scale(1.2) rotate(10deg);
+}
+
+/* Incoming Call Pulse Animation */
+.incoming-call {
+    animation: incomingCallPulse 0.4s ease;
+}
+
+/* Close Button Hover */
+.close-call-btn {
+    transition: all 0.2s ease;
+}
+
+.close-call-btn:hover {
+    animation: closeBtnGlow 0.3s ease;
+}
+
+@keyframes closeBtnGlow {
+    0% {
+        box-shadow: 0 0 0 0 rgba(237, 66, 69, 0.7);
+    }
+    70% {
+        box-shadow: 0 0 0 6px rgba(237, 66, 69, 0);
+    }
+    100% {
+        box-shadow: 0 0 0 0 rgba(237, 66, 69, 0);
+    }
+}
+
+/* Resize Handle Smooth Appearance */
+.resize-handle {
+    transition: opacity 0.2s ease, background-color 0.2s ease;
+}
+
+.resize-handle:hover {
+    background: rgba(255, 255, 255, 0.5) !important;
+}
+
+/* Tab Navigation Smooth */
+.friends-tab, .category-header {
+    transition: all 0.15s ease;
+}
+
+/* Scrollbar Smooth */
+::-webkit-scrollbar-thumb {
+    transition: background 0.2s ease;
+}
+
+::-webkit-scrollbar-thumb:hover {
+    background: #1a1c1f;
+}
+
+/* Input Placeholder Smooth */
+input::placeholder, textarea::placeholder {
+    transition: color 0.2s ease;
+}
+
+input:focus::placeholder, textarea:focus::placeholder {
+    color: #72767d;
+}
