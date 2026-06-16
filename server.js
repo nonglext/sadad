@@ -177,6 +177,50 @@ app.get('/api/user/profile', authenticateToken, async (req, res) => {
     }
 });
 
+// Update user profile
+app.patch('/api/user/profile', authenticateToken, async (req, res) => {
+    try {
+        const { username, status, avatar } = req.body;
+        const allowedStatuses = ['Online', 'Idle', 'DND', 'Invisible'];
+
+        if (!username || username.trim().length < 2) {
+            return res.status(400).json({ error: 'Username must be at least 2 characters' });
+        }
+
+        if (status && !allowedStatuses.includes(status)) {
+            return res.status(400).json({ error: 'Invalid status value' });
+        }
+
+        const currentUser = await userDB.findById(req.user.id);
+        if (!currentUser) {
+            return res.status(404).json({ error: 'User not found' });
+        }
+
+        await userDB.updateProfile(req.user.id, {
+            username: username.trim(),
+            status: status || currentUser.status || 'Online',
+            avatar: avatar?.trim() || currentUser.avatar || null,
+        });
+
+        const user = await userDB.findById(req.user.id);
+
+        for (const [socketId, connectedUser] of users.entries()) {
+            if (connectedUser.id === req.user.id) {
+                users.set(socketId, { ...connectedUser, ...user, socketId });
+            }
+        }
+
+        io.emit('user-status-change', { userId: user.id, status: user.status });
+        res.json(user);
+    } catch (error) {
+        if (error.message?.includes('UNIQUE constraint failed')) {
+            return res.status(409).json({ error: 'Username already taken' });
+        }
+        console.error('Update profile error:', error);
+        res.status(500).json({ error: 'Failed to update profile' });
+    }
+});
+
 // Get all users
 app.get('/api/users', authenticateToken, async (req, res) => {
     try {
@@ -414,6 +458,33 @@ io.on('connection', async (socket) => {
             });
         } catch (error) {
             console.error('Message error:', error);
+        }
+    });
+
+    // Typing indicator
+    socket.on('typing-start', (data) => {
+        try {
+            const connectedUser = users.get(socket.id);
+            if (!connectedUser) return;
+
+            const payload = {
+                userId: connectedUser.id,
+                username: connectedUser.username,
+                channelId: data.channelId || null,
+                dmUserId: data.dmUserId || null,
+            };
+
+            if (payload.channelId) {
+                socket.broadcast.emit('typing-start', payload);
+            } else if (payload.dmUserId) {
+                for (const [socketId, userEntry] of users.entries()) {
+                    if (userEntry.id === payload.dmUserId) {
+                        io.to(socketId).emit('typing-start', payload);
+                    }
+                }
+            }
+        } catch (error) {
+            console.error('Typing indicator error:', error);
         }
     });
 

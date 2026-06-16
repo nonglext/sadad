@@ -174,6 +174,16 @@ const userDB = {
         });
     },
 
+    updateProfile: (id, { username, status, avatar }) => {
+        return new Promise((resolve, reject) => {
+            const sql = 'UPDATE users SET username = ?, status = ?, avatar = ? WHERE id = ?';
+            db.run(sql, [username, status, avatar, id], function(err) {
+                if (err) reject(err);
+                else resolve({ id, username, status, avatar });
+            });
+        });
+    },
+
     getAll: () => {
         return new Promise((resolve, reject) => {
             const sql = 'SELECT id, username, email, avatar, status FROM users';

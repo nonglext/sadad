@@ -214,10 +214,28 @@ document.addEventListener('DOMContentLoaded', () => {
 });
 
 /**
+ * Dynamically load a client-side module script.
+ * @param {string} src - Script filename
+ * @returns {Promise<void>}
+ */
+function loadModule(src) {
+  return new Promise((resolve, reject) => {
+    const script = document.createElement('script');
+    script.src = src;
+    script.onload = () => resolve();
+    script.onerror = () => reject(new Error(`Failed to load module: ${src}`));
+    document.body.appendChild(script);
+  });
+}
+
+/**
  * Initialize application
  */
 async function initializeApp() {
   try {
+    await loadModule('settings.js');
+    SettingsModule.init({ appState, fetchWithError, updateUserInfo });
+
     // 1. Update UI with user info
     updateUserInfo();
 
@@ -237,6 +255,12 @@ async function initializeApp() {
 
     // 4. Connect to Socket.IO (LAST - ready to handle all events)
     await connectToSocketIO();
+
+    await loadModule('typing.js');
+    TypingModule.init({ appState, socketEmitSafe });
+
+    await loadModule('contextMenu.js');
+    ContextMenuModule.init();
 
     // 5. Load data from server
     await loadUserServers();
@@ -781,9 +805,19 @@ function handleCallEnded(data) {
 function updateUserInfo() {
   const userAvatar = document.querySelector('.user-avatar');
   const username = document.querySelector('.username');
-  
-  if (userAvatar && appState.user) userAvatar.textContent = appState.user.avatar || appState.user.username.charAt(0).toUpperCase();
-  if (username && appState.user) username.textContent = appState.user.username;
+  const userStatus = document.querySelector('.user-status');
+
+  if (userAvatar && appState.user) {
+    const avatar = appState.user.avatar;
+    const fallback = appState.user.username.charAt(0).toUpperCase();
+    userAvatar.textContent = avatar && !avatar.startsWith('http') ? avatar : fallback;
+  }
+  if (username && appState.user) {
+    username.textContent = appState.user.username;
+  }
+  if (userStatus && appState.user) {
+    userStatus.textContent = appState.user.status || 'Online';
+  }
 }
 
 function initializeFriendsTabs() {
@@ -1421,7 +1455,7 @@ function addMessageToUI(rawMessage) {
   // Add reaction button
   const addReactionBtn = document.createElement('button');
   addReactionBtn.className = 'add-reaction-btn';
-  addReactionBtn.textContent = '😊';
+  addReactionBtn.textContent = '+';
   addReactionBtn.title = 'Add reaction';
   addReactionBtn.addEventListener('click', () => showEmojiPickerForMessage(message.id || Date.now()));
   content.appendChild(addReactionBtn);
@@ -1634,7 +1668,7 @@ function initializeUserControls() {
   }
   
   if (settingsBtn) {
-    settingsBtn.addEventListener('click', openSettings);
+    settingsBtn.addEventListener('click', () => SettingsModule.open());
   }
 }
 
@@ -1676,23 +1710,6 @@ function toggleDeafen() {
     appState.localStream.getAudioTracks().forEach(track => {
       track.enabled = !appState.isMuted;
     });
-  }
-}
-
-function openSettings() {
-  if (confirm('Do you want to logout?')) {
-    if (appState.inCall) {
-      leaveVoiceChannel(true);
-    }
-    
-    localStorage.removeItem('token');
-    localStorage.removeItem('currentUser');
-    
-    if (appState.socket) {
-      appState.socket.disconnect();
-    }
-    
-    window.location.replace('login.html');
   }
 }
 
