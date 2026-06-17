@@ -1743,6 +1743,7 @@ function initializeUserControls() {
   const muteBtn = document.getElementById('muteBtn');
   const deafenBtn = document.getElementById('deafenBtn');
   const settingsBtn = document.getElementById('settingsBtn');
+  const logoutBtn = document.getElementById('logoutBtn');
   
   if (muteBtn) {
     muteBtn.addEventListener('click', toggleMute);
@@ -1755,6 +1756,23 @@ function initializeUserControls() {
   if (settingsBtn) {
     settingsBtn.addEventListener('click', () => SettingsModule.open());
   }
+
+  if (logoutBtn) {
+    logoutBtn.addEventListener('click', handleLogout);
+  }
+}
+
+/**
+ * Функция для выхода из системы
+ */
+function handleLogout() {
+  if (!confirm('Вы уверены, что хотите выйти?')) return;
+  
+  localStorage.removeItem('token');
+  localStorage.removeItem('currentUser');
+  
+  if (appState.socket) appState.socket.disconnect();
+  window.location.replace('login.html');
 }
 
 function toggleMute() {

@@ -1,3 +1,5 @@
+import { isUsernameTaken, createUserDocument } from './firebase-config.js';
+
 let isLoginMode = true;
 
 document.addEventListener('DOMContentLoaded', () => {

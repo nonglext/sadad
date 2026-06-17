@@ -8,6 +8,7 @@ const SettingsModule = (() => {
   let deps = {};
 
   let overlay = null;
+  let logoutBtn = null;
   let nicknameInput = null;
   let statusSelect = null;
   let avatarInput = null;
@@ -129,6 +130,7 @@ const SettingsModule = (() => {
         </div>
         <div class="settings-modal-footer">
           <button type="button" class="settings-btn settings-btn-cancel">Cancel</button>
+          <button type="button" class="settings-btn settings-btn-danger" id="settingsLogoutBtn" style="background-color: #ed4245; color: white; border: none; margin-right: auto;">Log Out</button>
           <button type="button" class="settings-btn settings-btn-save" id="settingsSaveBtn">Save</button>
         </div>
       </div>
@@ -138,6 +140,7 @@ const SettingsModule = (() => {
     nicknameInput = overlay.querySelector('#settingsNickname');
     statusSelect = overlay.querySelector('#settingsStatus');
     avatarInput = overlay.querySelector('#settingsAvatar');
+    logoutBtn = overlay.querySelector('#settingsLogoutBtn');
     saveBtn = overlay.querySelector('#settingsSaveBtn');
     errorEl = overlay.querySelector('#settingsError');
     displayNameInput = overlay.querySelector('#settingsDisplayName');
@@ -153,6 +156,7 @@ const SettingsModule = (() => {
     overlay.querySelector('.settings-modal-close').addEventListener('click', close);
     overlay.querySelector('.settings-btn-cancel').addEventListener('click', close);
     overlay.addEventListener('click', e => { if (e.target === overlay) close(); });
+    logoutBtn.addEventListener('click', handleLogout);
     saveBtn.addEventListener('click', saveProfile);
 
     if (decorationTypeInput) {
@@ -170,6 +174,19 @@ const SettingsModule = (() => {
     document.addEventListener('keydown', e => {
       if (e.key === 'Escape' && overlay.classList.contains('visible')) close();
     });
+  }
+
+  function handleLogout() {
+    if (!confirm('Are you sure you want to log out?')) return;
+    
+    localStorage.removeItem('token');
+    localStorage.removeItem('currentUser');
+    
+    if (deps.appState.socket) {
+      deps.appState.socket.disconnect();
+    }
+    
+    window.location.replace('login.html');
   }
 
   function updatePreview() {
