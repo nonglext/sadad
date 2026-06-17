@@ -80,19 +80,18 @@ const appState = {
   },
 
   // ---- PROFILE SYSTEM ----
-  // Badges (Nitro-style)
-  badges: [
-    // predefined system badges
-    { id: 'nitro', name: 'Nitro', icon: 'nitro-badge', description: 'Discord Nitro Subscriber' },
-    { id: 'nitro-classic', name: 'Nitro Classic', icon: 'nitro-classic-badge', description: 'Nitro Classic' },
-    { id: 'booster', name: 'Server Booster', icon: 'booster-badge', description: 'Server Boosting' },
-    { id: 'developer', name: 'Developer', icon: 'dev-badge', description: 'Active Developer' },
-    { id: 'moderator', name: 'Moderator', icon: 'mod-badge', description: 'Discord Moderator' },
-    { id: 'verified', name: 'Verified', icon: 'verified-badge', description: 'Verified User' },
-    { id: 'early', name: 'Early Supporter', icon: 'early-badge', description: 'Early Supporter' },
-  ],
-  // User's earned badges
-  userBadges: [], // [{ badgeId, earnedAt }]
+  // Badge Registry — централизованное описание всех бейджей
+  BADGE_REGISTRY: {
+    'nitro':        { id: 'nitro',        name: 'Nitro',          icon: 'nitro',        path: 'src/assets/badges/nitro.svg',        description: 'Discord Nitro Subscriber' },
+    'nitro-classic':{ id: 'nitro-classic',name: 'Nitro Classic',   icon: 'nitro-classic',path: 'src/assets/badges/nitro-classic.svg', description: 'Nitro Classic' },
+    'booster':      { id: 'booster',      name: 'Server Booster',  icon: 'booster',      path: 'src/assets/badges/booster.svg',      description: 'Server Boosting' },
+    'developer':    { id: 'developer',    name: 'Developer',       icon: 'developer',    path: 'src/assets/badges/developer.svg',    description: 'Active Developer' },
+    'moderator':    { id: 'moderator',    name: 'Moderator',       icon: 'moderator',    path: 'src/assets/badges/moderator.svg',    description: 'Discord Moderator' },
+    'verified':     { id: 'verified',     name: 'Verified',        icon: 'verified',     path: 'src/assets/badges/verified.svg',     description: 'Verified User' },
+    'early':        { id: 'early',        name: 'Early Supporter', icon: 'early',        path: 'src/assets/badges/early.svg',        description: 'Early Supporter' },
+  },
+  // User's earned badges — по умолчанию каждому новый пользователь получает Nitro
+  userBadges: [{ badgeId: 'nitro', earnedAt: new Date().toISOString() }],
 
   // Avatar decoration
   avatarDecoration: null, // { type, color, url }

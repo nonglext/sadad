@@ -2218,6 +2218,26 @@ textarea:focus-visible {
     height: 24px;
 }
 
+/* Badge-icon — for BADGE_REGISTRY-based SVG files */
+.badge-icon {
+    width: 28px;
+    height: 28px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: transform 0.2s;
+}
+
+.badge-icon:hover {
+    transform: scale(1.25);
+}
+
+.badge-icon img {
+    pointer-events: none;
+    user-select: none;
+}
+
 /* Divider */
 .profile-modal-divider {
     height: 1px;

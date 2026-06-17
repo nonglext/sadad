@@ -1,12 +1,10 @@
 /**
- * Discord-style Profile Modal v3 — REFACTORED
- * - Карточка 420px
- * - Аватар 120px со статусом-кружком (как в Discord)
- * - Бейджи ПОД именем/username строкой
- * - По умолчанию Nitro badge каждому пользователю
- * - NO виджетов
- * - Banner, Decoration, Theme, Nameplate сохранены
- * - Плавные анимации, Discord-тени
+ * Discord-style Profile Modal v4 — REFACTORED
+ * - BADGE_REGISTRY в appState, локальные SVG-файлы
+ * - Аватар: object-fit: cover, 120×120, aspect-ratio 1/1
+ * - Статус-кружок position: absolute внизу-справа
+ * - Бейджи (img src из BADGE_REGISTRY) под username, выше Bio
+ * - Опционально: crop иконка звонка из Lucide
  * @module ProfileModule
  */
 const ProfileModule = (() => {
@@ -17,20 +15,45 @@ const ProfileModule = (() => {
   let currentProfileUserId = null;
 
   /**
-   * SVG badge icons — Discord-style (кристалл/звезда)
+   * Рендер бейджей через BADGE_REGISTRY + локальные SVG-файлы
+   * @param {string[]} badgeIds — массив ID бейджей
    */
-  const BADGE_ICONS = {
-    'nitro-badge': `<svg width="24" height="24" viewBox="0 0 24 24" fill="none"><defs><linearGradient id="nitroG" x1="0" y1="0" x2="1" y2="1"><stop offset="0%" stop-color="#ff73fa"/><stop offset="100%" stop-color="#5865f2"/></linearGradient></defs><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-1 15l-5-5 1.41-1.41L11 14.17l6.59-6.59L19 9l-8 8z" fill="url(#nitroG)"/><circle cx="12" cy="12" r="3" fill="#fff" opacity="0.3"/></svg>`,
-    'nitro-classic-badge': `<svg width="24" height="24" viewBox="0 0 24 24" fill="none"><defs><linearGradient id="ncG" x1="0" y1="0" x2="1" y2="1"><stop offset="0%" stop-color="#ff73fa"/><stop offset="100%" stop-color="#9b59b6"/></linearGradient></defs><path d="M12 3L3 8v8l9 5 9-5V8l-9-5zm0 2.18l6 3.33v3.98L12 18.3 6 12.49V8.51l6-3.33z" fill="url(#ncG)"/><path d="M12 8l-2 1.5v3L12 14l2-1.5v-3L12 8z" fill="#fff"/></svg>`,
-    'booster-badge': `<svg width="24" height="24" viewBox="0 0 24 24" fill="none"><defs><linearGradient id="bstG" x1="0" y1="0" x2="1" y2="1"><stop offset="0%" stop-color="#ff73fa"/><stop offset="100%" stop-color="#f47fff"/></linearGradient></defs><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z" fill="url(#bstG)"/><circle cx="12" cy="12" r="2" fill="#fff" opacity="0.4"/></svg>`,
-    'dev-badge': `<svg width="24" height="24" viewBox="0 0 24 24" fill="none"><path d="M12 2L2 7v10l10 5 10-5V7L12 2zm5 12.5l-5-5 1.41-1.41L17 12.67l-3.59 3.59L12 14.83l5-5.33V14.5z" fill="#5865f2"/></svg>`,
-    'mod-badge': `<svg width="24" height="24" viewBox="0 0 24 24" fill="none"><path d="M12 1L3 5v6c0 5.55 3.84 10.74 9 12 5.16-1.26 9-6.45 9-12V5l-9-4zm-2 16l-4-4 1.41-1.41L10 14.17l6.59-6.59L18 9l-8 8z" fill="#43b581"/></svg>`,
-    'verified-badge': `<svg width="24" height="24" viewBox="0 0 24 24" fill="none"><path d="M12 1L3 5v6c0 5.55 3.84 10.74 9 12 5.16-1.26 9-6.45 9-12V5l-9-4zm-2 16l-4-4 1.41-1.41L10 14.17l6.59-6.59L18 9l-8 8z" fill="#3ba55d"/></svg>`,
-    'early-badge': `<svg width="24" height="24" viewBox="0 0 24 24" fill="none"><path d="M12 17.27L18.18 21l-1.64-7.03L22 9.24l-7.19-.61L12 2 9.19 8.63 2 9.24l5.46 4.73L5.82 21z" fill="#faa61a"/></svg>`,
-  };
+  function renderBadges(badgeIds) {
+    const el = document.getElementById('profileBadges');
+    if (!el) return;
+    el.innerHTML = '';
+    if (!badgeIds || badgeIds.length === 0) {
+      el.style.display = 'none';
+      return;
+    }
+    el.style.display = 'flex';
 
-  function getBadgeSVG(iconName) {
-    return BADGE_ICONS[iconName] || '';
+    const registry = deps.appState?.BADGE_REGISTRY || {};
+
+    badgeIds.forEach(id => {
+      const badgeData = registry[id];
+      if (!badgeData) return;
+
+      const badgeEl = document.createElement('div');
+      badgeEl.className = 'badge-icon';
+      badgeEl.title = badgeData.description || badgeData.name;
+
+      // Используем <img> с путём к локальному SVG-файлу
+      const img = document.createElement('img');
+      img.src = badgeData.path;
+      img.alt = badgeData.name;
+      img.width = 24;
+      img.height = 24;
+      img.loading = 'lazy';
+      img.draggable = false;
+      img.onerror = function () {
+        this.style.display = 'none';
+        badgeEl.textContent = badgeData.name.charAt(0);
+      };
+
+      badgeEl.appendChild(img);
+      el.appendChild(badgeEl);
+    });
   }
 
   function init(dependencies) {
@@ -50,30 +73,23 @@ const ProfileModule = (() => {
     overlay.innerHTML = `
       <div class="profile-modal" role="dialog">
         <button type="button" class="profile-modal-close" aria-label="Close">&times;</button>
-        <!-- Banner -->
         <div class="profile-modal-banner" id="profileBanner"></div>
-        <!-- Avatar Container — большой аватар + статус-кружок -->
         <div class="profile-modal-avatar-container" id="profileAvatarContainer">
           <div class="profile-modal-avatar-decoration" id="profileAvatarDecoration"></div>
           <div class="profile-modal-avatar" id="profileAvatar">U</div>
           <div class="profile-modal-status" id="profileStatus">Online</div>
         </div>
-        <!-- Body -->
         <div class="profile-modal-body">
-          <!-- Name Row (имя + юзернейм + бейджи под ними) -->
           <div class="profile-modal-name-row" id="profileNameplate">
             <h2 class="profile-modal-displayname" id="profileDisplayName">Display Name</h2>
             <span class="profile-modal-username" id="profileUsername">@username</span>
-            <!-- Badges placed right under the username -->
             <div class="profile-modal-badges" id="profileBadges"></div>
           </div>
           <div class="profile-modal-divider"></div>
-          <!-- About Me -->
           <div class="profile-modal-section">
             <div class="profile-modal-section-title">About Me</div>
             <p class="profile-modal-bio" id="profileAboutMe">No description set.</p>
           </div>
-          <!-- Role (for group DMs) -->
           <div class="profile-modal-section" id="profileRoleSection" style="display:none;">
             <div class="profile-modal-section-title">Role</div>
             <div class="profile-role-badge" id="profileRoleBadge">
@@ -81,7 +97,6 @@ const ProfileModule = (() => {
               <span>Group Owner</span>
             </div>
           </div>
-          <!-- Actions -->
           <div class="profile-modal-actions" id="profileActions">
             <button class="profile-btn profile-btn-primary" id="profileEditBtn" style="display:none;">
               <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M3 17.25V21h3.75L17.81 9.94l-3.75-3.75L3 17.25zM20.71 7.04c.39-.39.39-1.02 0-1.41l-2.34-2.34c-.39-.39-1.02-.39-1.41 0l-1.83 1.83 3.75 3.75 1.83-1.83z"/></svg>
@@ -148,22 +163,6 @@ const ProfileModule = (() => {
     }
   }
 
-  function renderBadges(badges) {
-    const el = document.getElementById('profileBadges');
-    if (!el) return;
-    el.innerHTML = '';
-    if (!badges || badges.length === 0) { el.style.display = 'none'; return; }
-    el.style.display = 'flex';
-    badges.forEach(badge => {
-      const b = document.createElement('div');
-      b.className = 'profile-badge';
-      b.title = badge.description || badge.name;
-      const svg = getBadgeSVG(badge.icon);
-      b.innerHTML = svg || badge.name.charAt(0);
-      el.appendChild(b);
-    });
-  }
-
   function applyNameplate(nameplate) {
     const row = document.getElementById('profileNameplate');
     if (!row || !nameplate) return;
@@ -202,20 +201,21 @@ const ProfileModule = (() => {
     const messageBtn = document.getElementById('profileMessageBtn');
     const roleSection = document.getElementById('profileRoleSection');
 
-    // Avatar
+    // Аватар — через object-fit: cover
     const letter = (user.displayName || user.username || 'U').charAt(0).toUpperCase();
-    avatarEl.textContent = (user.avatar && user.avatar.startsWith('http')) ? '' : letter;
     if (user.avatar && user.avatar.startsWith('http')) {
+      avatarEl.innerHTML = ''; // очищаем текст
       avatarEl.style.backgroundImage = `url(${user.avatar})`;
       avatarEl.style.backgroundSize = 'cover';
       avatarEl.style.backgroundPosition = 'center';
       avatarEl.style.color = 'transparent';
     } else {
+      avatarEl.textContent = letter;
       avatarEl.style.backgroundImage = '';
       avatarEl.style.color = '';
     }
 
-    // Status — как в Discord: цветной кружок внизу-справа аватарки
+    // Status — цветной кружок в правом нижнем углу аватарки
     statusEl.textContent = user.status || 'Offline';
     statusEl.className = 'profile-modal-status ' + (
       user.status === 'Online' ? 'status-online' :
@@ -227,39 +227,35 @@ const ProfileModule = (() => {
     usernameEl.textContent = '@' + user.username;
     aboutMeEl.textContent = user.aboutMe || 'No description set.';
 
-    // Banner
+    // Banner, Decoration, Theme, Nameplate
     setBanner(user.profileBanner || deps.appState.profileBanner || null);
-    // Decoration
     setAvatarDecoration(user.avatarDecoration || deps.appState.avatarDecoration || null);
-    // Theme
     applyProfileTheme(user.profileTheme || deps.appState.profileTheme || null);
-    // Nameplate
     applyNameplate(user.nameplate || deps.appState.nameplate || null);
 
-    // Badges — каждому пользователю по умолчанию выдаётся Nitro
-    const allBadges = [];
-    if (deps.appState.badges && deps.appState.badges.length > 0) {
-      // Всегда добавляем Nitro как первый элемент
-      const nitroBadge = deps.appState.badges.find(b => b.id === 'nitro');
-      if (nitroBadge) allBadges.push(nitroBadge);
+    // Бейджи — используем BADGE_REGISTRY + userBadges
+    const badgeIds = [];
+    const registry = deps.appState?.BADGE_REGISTRY || {};
 
-      // Добавляем остальные по наличию
-      const earnedIds = (user.userBadges || deps.appState.userBadges || []).map(b => b.badgeId || b.id);
-      deps.appState.badges.forEach(b => {
-        if (b.id !== 'nitro' && earnedIds.includes(b.id)) {
-          allBadges.push(b);
-        }
-      });
+    // Всегда Nitro
+    if (registry['nitro']) badgeIds.push('nitro');
 
-      // Dev badge для владельца профиля
-      if (String(user.id) === String(deps.appState.user?.id) && !allBadges.find(b => b.id === 'developer')) {
-        const devBadge = deps.appState.badges.find(b => b.id === 'developer');
-        if (devBadge) allBadges.push(devBadge);
+    // Добавляем остальные из earned
+    const earnedIds = (user.userBadges || deps.appState.userBadges || []).map(b => b.badgeId || b.id);
+    Object.keys(registry).forEach(id => {
+      if (id !== 'nitro' && earnedIds.includes(id)) {
+        badgeIds.push(id);
       }
-    }
-    renderBadges(allBadges);
+    });
 
-    // Role section for group DMs
+    // Dev для владельца
+    if (String(user.id) === String(deps.appState.user?.id) && !badgeIds.includes('developer') && registry['developer']) {
+      badgeIds.push('developer');
+    }
+
+    renderBadges(badgeIds);
+
+    // Role section
     if (user.isGroupOwner) {
       roleSection.style.display = 'block';
       roleSection.querySelector('#profileRoleBadge span').textContent = user.roleLabel || 'Group Owner';
