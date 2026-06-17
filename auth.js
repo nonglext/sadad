@@ -140,6 +140,15 @@ async function login(email, password) {
 
 async function register(username, email, password) {
     try {
+        // Step 1: Check username uniqueness via Firebase Firestore
+        if (typeof isUsernameTaken === 'function') {
+            const taken = await isUsernameTaken(username);
+            if (taken) {
+                showError('Этот никнейм уже занят');
+                return;
+            }
+        }
+        
         const response = await fetch('/api/register', {
             method: 'POST',
             headers: {
@@ -153,6 +162,25 @@ async function register(username, email, password) {
         if (!response.ok) {
             showError(data.error || 'Registration failed');
             return;
+        }
+        
+        // Step 2: Create user document in Firestore
+        if (typeof createUserDocument === 'function' && data.user?.id) {
+            try {
+                await createUserDocument({
+                    userId: data.user.id,
+                    username: username,
+                    displayName: username,
+                    avatarUrl: null,
+                    bannerUrl: null,
+                    badges: ['nitro'], // Default Nitro badge
+                    status: 'offline',
+                    theme: { primary: '#5865f2', accent: '#3ba55d' }
+                });
+            } catch (firebaseError) {
+                console.error('[Firebase] Failed to create user document:', firebaseError);
+                // Continue anyway - backend registration succeeded
+            }
         }
         
         // Save token and user data

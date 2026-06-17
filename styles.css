@@ -2094,13 +2094,15 @@ textarea:focus-visible {
     transform: scale(1.1);
 }
 
-/* Avatar container — большой, центрированный, аватар 124px */
+/* Avatar container — центрированный, аватар 124px полностью виден */
 .profile-modal-avatar-container {
     display: flex;
     justify-content: center;
-    margin-top: -62px;
+    margin-top: -70px; /* половина аватара для наложения на баннер */
     position: relative;
     z-index: 5;
+    height: 140px; /* резервируем место */
+    align-items: flex-start;
 }
 
 .profile-modal-avatar-decoration {
@@ -2108,17 +2110,20 @@ textarea:focus-visible {
     width: 140px;
     height: 140px;
     border-radius: 50%;
-    top: -8px;
+    top: 0;
     left: 50%;
     transform: translateX(-50%);
     display: none;
     pointer-events: none;
+    box-sizing: border-box;
 }
 
-/* Аватар — 124x124, крупный, с border */
+/* Аватар — 120x120, border 6px, background-image cover */
 .profile-modal-avatar {
-    width: 124px;
-    height: 124px;
+    width: 120px;
+    height: 120px;
+    min-width: 120px;
+    min-height: 120px;
     border-radius: 50%;
     background: linear-gradient(135deg, var(--profile-primary), #5865f2);
     display: flex;
@@ -2127,22 +2132,27 @@ textarea:focus-visible {
     font-size: 52px;
     font-weight: 600;
     color: #fff;
-    position: relative;
     border: 6px solid #111214;
     cursor: pointer;
     transition: transform 0.2s;
-    aspect-ratio: 1/1;
+    flex-shrink: 0;
+    box-sizing: content-box;
+    overflow: hidden;
+    background-size: cover;
+    background-position: center;
+    object-fit: cover;
+    object-position: center;
 }
 
 .profile-modal-avatar:hover {
     transform: scale(1.06);
 }
 
-/* Status indicator — как в Discord: маленький кружок, полностью помещается в аватарку */
+/* Status indicator — маленький кружок в правом нижнем углу аватарки */
 .profile-modal-status {
     position: absolute;
-    bottom: 2px;
-    right: 2px;
+    bottom: 8px;
+    right: 8px;
     width: 20px;
     height: 20px;
     border-radius: 50%;
@@ -2189,6 +2199,7 @@ textarea:focus-visible {
     color: #b9bbbe;
     display: block;
     margin-top: 2px;
+    text-align: center;
 }
 
 /* Badges — ПОД username, центрированные, компактные */
